@@ -1,5 +1,6 @@
 # Gradle / build outputs
 .gradle/
+.gradle_user_home/
 build/
 **/build/
 out/
@@ -23,4 +24,3 @@ Thumbs.db
 
 # Logs
 *.log
-
