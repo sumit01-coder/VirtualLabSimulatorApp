@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <style name="Theme.VirtualLabAdmin" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/brand</item>
+        <item name="colorPrimaryVariant">@color/brand</item>
+        <item name="colorOnPrimary">@android:color/white</item>
+        <item name="colorSecondary">@color/brand</item>
+        <item name="colorOnSecondary">@android:color/white</item>
+        <item name="colorSurface">@color/bg_surface</item>
+        <item name="colorOnSurface">@color/text_primary</item>
+        <item name="colorControlNormal">@color/text_primary</item>
+        <item name="colorControlActivated">@color/brand</item>
+
+        <item name="android:windowBackground">@color/bg_dark</item>
+        <item name="android:colorBackground">@color/bg_dark</item>
+        <item name="android:textColorPrimary">@color/text_primary</item>
+        <item name="android:textColorSecondary">@color/text_muted</item>
+
+        <item name="materialButtonStyle">@style/Widget.VirtualLab.Button</item>
+        <item name="textInputStyle">@style/Widget.VirtualLab.TextInputLayout.Outlined</item>
+        <item name="materialCardViewStyle">@style/Widget.VirtualLab.Card</item>
+
+        <item name="android:statusBarColor" tools:targetApi="l">@color/bg_dark</item>
+        <item name="android:navigationBarColor" tools:targetApi="l">@color/bg_surface</item>
+    </style>
+</resources>

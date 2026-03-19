@@ -1,0 +1,26 @@
+# Gradle / build outputs
+.gradle/
+build/
+**/build/
+out/
+
+# Local SDK config
+local.properties
+
+# IDE
+.idea/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Keystores / signing
+*.jks
+*.keystore
+*.p12
+*.key
+
+# Logs
+*.log
+

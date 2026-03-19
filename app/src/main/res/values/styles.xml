@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Widget.VirtualLab.Button" parent="Widget.MaterialComponents.Button">
+        <item name="android:textAllCaps">false</item>
+        <item name="android:insetLeft">0dp</item>
+        <item name="android:insetRight">0dp</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="android:minHeight">@dimen/btn_h</item>
+        <item name="cornerRadius">@dimen/radius_md</item>
+        <item name="android:letterSpacing">0</item>
+    </style>
+
+    <style name="Widget.VirtualLab.Button.Small" parent="Widget.VirtualLab.Button">
+        <item name="android:minHeight">@dimen/btn_h_sm</item>
+        <item name="android:textSize">13sp</item>
+        <item name="android:paddingLeft">@dimen/space_sm</item>
+        <item name="android:paddingRight">@dimen/space_sm</item>
+    </style>
+
+    <style name="Widget.VirtualLab.TextInputLayout.Outlined" parent="Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+        <item name="boxStrokeColor">@color/stroke</item>
+        <item name="hintTextColor">@color/text_muted</item>
+        <item name="boxCornerRadiusTopStart">@dimen/radius_md</item>
+        <item name="boxCornerRadiusTopEnd">@dimen/radius_md</item>
+        <item name="boxCornerRadiusBottomStart">@dimen/radius_md</item>
+        <item name="boxCornerRadiusBottomEnd">@dimen/radius_md</item>
+        <item name="boxBackgroundColor">@color/bg_dark</item>
+    </style>
+
+    <style name="Widget.VirtualLab.TextInputLayout.Exposed" parent="Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu">
+        <item name="boxStrokeColor">@color/stroke</item>
+        <item name="hintTextColor">@color/text_muted</item>
+        <item name="boxCornerRadiusTopStart">@dimen/radius_md</item>
+        <item name="boxCornerRadiusTopEnd">@dimen/radius_md</item>
+        <item name="boxCornerRadiusBottomStart">@dimen/radius_md</item>
+        <item name="boxCornerRadiusBottomEnd">@dimen/radius_md</item>
+        <item name="boxBackgroundColor">@color/bg_dark</item>
+    </style>
+
+    <style name="Widget.VirtualLab.Card" parent="Widget.MaterialComponents.CardView">
+        <item name="cardBackgroundColor">@color/bg_surface</item>
+        <item name="strokeColor">@color/stroke</item>
+        <item name="strokeWidth">1dp</item>
+        <item name="cardCornerRadius">@dimen/radius_md</item>
+        <item name="cardElevation">2dp</item>
+        <item name="cardUseCompatPadding">true</item>
+    </style>
+</resources>

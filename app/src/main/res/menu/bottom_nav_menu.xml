@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/nav_dashboard"
+        android:title="Dashboard"
+        android:icon="@drawable/ic_dashboard_24" />
+    <item
+        android:id="@+id/nav_tickets"
+        android:title="Tickets"
+        android:icon="@drawable/ic_tickets_24" />
+    <item
+        android:id="@+id/nav_settings"
+        android:title="Settings"
+        android:icon="@drawable/ic_settings_24" />
+    <item
+        android:id="@+id/nav_practicals"
+        android:title="Practicals"
+        android:icon="@drawable/ic_practicals_24" />
+    <item
+        android:id="@+id/nav_ddos"
+        android:title="Security"
+        android:icon="@drawable/ic_security_24" />
+</menu>

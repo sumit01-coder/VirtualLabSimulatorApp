@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    style="@style/Widget.VirtualLab.Card"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="@dimen/space_sm"
+    app:strokeColor="@color/stroke">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="@dimen/space_md">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:id="@+id/time"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="12:00:01"
+                android:textColor="@color/text_muted"
+                android:textSize="12sp" />
+
+            <View
+                android:id="@+id/errorDot"
+                android:layout_width="8dp"
+                android:layout_height="8dp"
+                android:layout_marginStart="@dimen/space_sm"
+                android:background="@drawable/bg_status_dot_danger"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/ip"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="1.2.3.4"
+                android:textColor="@color/text_primary"
+                android:textStyle="bold"
+                android:layout_marginStart="@dimen/space_sm" />
+
+            <TextView
+                android:id="@+id/method"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="GET"
+                android:textColor="@color/text_primary"
+                android:textSize="12sp"
+                android:background="@drawable/bg_chip_muted"
+                android:paddingLeft="@dimen/space_sm"
+                android:paddingRight="@dimen/space_sm"
+                android:paddingTop="3dp"
+                android:paddingBottom="3dp" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/endpoint"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="/api/endpoint"
+            android:textColor="@color/text_muted"
+            android:textSize="12sp"
+            android:layout_marginTop="6dp"
+            android:maxLines="2" />
+
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>
+

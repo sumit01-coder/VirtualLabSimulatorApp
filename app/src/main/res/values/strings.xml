@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Virtual Lab Admin</string>
+    <string-array name="ticket_status_filters">
+        <item>All</item>
+        <item>Open</item>
+        <item>Pending</item>
+        <item>Closed</item>
+    </string-array>
+</resources>
+
