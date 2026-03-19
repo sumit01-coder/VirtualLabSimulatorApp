@@ -1,0 +1,67 @@
+name: Build APK and Publish Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing tag to release (example: v1.1.2)"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
+
+      - name: Resolve tag
+        id: tag
+        shell: bash
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "value=${{ inputs.tag }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "value=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build debug APK
+        run: ./gradlew :app:assembleDebug
+
+      - name: Prepare artifact
+        id: artifact
+        shell: bash
+        run: |
+          TAG="${{ steps.tag.outputs.value }}"
+          APK_IN="app/build/outputs/apk/debug/app-debug.apk"
+          APK_OUT="virtual-lab-admin-${TAG}.apk"
+          if [[ ! -f "$APK_IN" ]]; then
+            echo "Missing APK: $APK_IN"
+            exit 1
+          fi
+          cp "$APK_IN" "$APK_OUT"
+          echo "apk=$APK_OUT" >> "$GITHUB_OUTPUT"
+
+      - name: Publish GitHub Release (and upload APK)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag.outputs.value }}
+          generate_release_notes: true
+          files: ${{ steps.artifact.outputs.apk }}
+
