@@ -1,20 +1,24 @@
 package com.virtuallab.admin.work;
 
+import android.app.PendingIntent;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
+import android.os.Build;
 
 import androidx.annotation.NonNull;
 import androidx.work.Worker;
 import androidx.work.WorkerParameters;
 
+import com.virtuallab.admin.BuildConfig;
 import com.virtuallab.admin.api.ApiClient;
 import com.virtuallab.admin.api.ApiService;
-import com.virtuallab.admin.BuildConfig;
 import com.virtuallab.admin.data.TokenStore;
 import com.virtuallab.admin.model.ApiResponse;
 import com.virtuallab.admin.model.AppUpdateData;
 import com.virtuallab.admin.model.UpdatesData;
 import com.virtuallab.admin.notifications.NotificationHelper;
+import com.virtuallab.admin.ui.AppUpdateActivity;
 
 import retrofit2.Response;
 
@@ -29,7 +33,11 @@ public final class UpdatesWorker extends Worker {
     private static final String KEY_LAST_CHECKED_AT = "last_checked_at";
     private static final String KEY_LAST_LATEST_VERSION = "last_latest_version";
     private static final String KEY_LAST_DOWNLOAD_URL = "last_download_url";
+    private static final String KEY_LAST_RELEASE_URL = "last_release_url";
+    private static final String KEY_LAST_NOTES = "last_notes";
+    private static final String KEY_LAST_PUBLISHED_AT = "last_published_at";
     private static final String KEY_LAST_NOTIFIED_VERSION = "last_notified_version";
+
     private static final long APP_CHECK_MIN_INTERVAL_MS = 6L * 60L * 60L * 1000L; // 6 hours
 
     public UpdatesWorker(@NonNull Context context, @NonNull WorkerParameters workerParams) {
@@ -104,11 +112,34 @@ public final class UpdatesWorker extends Worker {
                     AppUpdateData d = ur.body().data;
                     String latestVer = (d.latest != null) ? d.latest.version : null;
                     String downloadUrl = (d.latest != null) ? d.latest.download_url : null;
+                    String releaseUrl = (d.latest != null) ? d.latest.release_url : null;
+                    String notes = (d.latest != null) ? d.latest.notes : null;
+                    String publishedAt = (d.latest != null) ? d.latest.published_at : null;
+
                     boolean available = d.update_available && latestVer != null && !latestVer.trim().isEmpty();
 
                     String lastNotified = appPrefs.getString(KEY_LAST_NOTIFIED_VERSION, null);
                     if (available && (lastNotified == null || !latestVer.equals(lastNotified))) {
-                        NotificationHelper.notify(context, 1100, "App update available", "New version " + latestVer + " is available. Open Settings \u2192 App updates.");
+                        Intent ui = new Intent(context, AppUpdateActivity.class);
+                        ui.putExtra(AppUpdateActivity.EXTRA_LATEST_VERSION, latestVer);
+                        ui.putExtra(AppUpdateActivity.EXTRA_DOWNLOAD_URL, downloadUrl);
+                        ui.putExtra(AppUpdateActivity.EXTRA_RELEASE_URL, releaseUrl);
+                        ui.putExtra(AppUpdateActivity.EXTRA_NOTES, notes);
+                        ui.putExtra(AppUpdateActivity.EXTRA_PUBLISHED_AT, publishedAt);
+
+                        int flags = PendingIntent.FLAG_UPDATE_CURRENT;
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                            flags |= PendingIntent.FLAG_IMMUTABLE;
+                        }
+                        PendingIntent pi = PendingIntent.getActivity(context, 1100, ui, flags);
+
+                        NotificationHelper.notify(
+                                context,
+                                1100,
+                                "App update available",
+                                "New version " + latestVer + " is available. Tap to update.",
+                                pi
+                        );
                         appPrefs.edit().putString(KEY_LAST_NOTIFIED_VERSION, latestVer).apply();
                     }
 
@@ -116,6 +147,9 @@ public final class UpdatesWorker extends Worker {
                             .putLong(KEY_LAST_CHECKED_AT, now)
                             .putString(KEY_LAST_LATEST_VERSION, latestVer)
                             .putString(KEY_LAST_DOWNLOAD_URL, downloadUrl)
+                            .putString(KEY_LAST_RELEASE_URL, releaseUrl)
+                            .putString(KEY_LAST_NOTES, notes)
+                            .putString(KEY_LAST_PUBLISHED_AT, publishedAt)
                             .apply();
                 } else {
                     appPrefs.edit().putLong(KEY_LAST_CHECKED_AT, now).apply();

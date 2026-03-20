@@ -2,9 +2,11 @@ package com.virtuallab.admin.notifications;
 
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.Context;
 import android.os.Build;
 
+import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 
@@ -30,11 +32,15 @@ public final class NotificationHelper {
                 "Admin updates",
                 NotificationManager.IMPORTANCE_DEFAULT
         );
-        ch.setDescription("Notifications for new tickets and new practicals.");
+        ch.setDescription("Notifications for new tickets, new practicals, and app updates.");
         nm.createNotificationChannel(ch);
     }
 
     public static void notify(Context context, int id, String title, String text) {
+        notify(context, id, title, text, null);
+    }
+
+    public static void notify(Context context, int id, String title, String text, @Nullable PendingIntent contentIntent) {
         if (context == null) return;
         ensureChannel(context);
 
@@ -46,7 +52,10 @@ public final class NotificationHelper {
                 .setAutoCancel(true)
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT);
 
+        if (contentIntent != null) {
+            b.setContentIntent(contentIntent);
+        }
+
         NotificationManagerCompat.from(context).notify(id, b.build());
     }
 }
-

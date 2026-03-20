@@ -3,7 +3,6 @@ package com.virtuallab.admin.ui.fragments;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.net.Uri;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -28,6 +27,7 @@ import com.virtuallab.admin.model.SettingsData;
 import com.virtuallab.admin.model.SettingsUpdateRequest;
 import com.virtuallab.admin.ui.LabsActivity;
 import com.virtuallab.admin.ui.DepartmentsActivity;
+import com.virtuallab.admin.ui.AppUpdateActivity;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -39,6 +39,9 @@ public final class SettingsFragment extends BaseAuthedFragment {
     private static final String KEY_LAST_CHECKED_AT = "last_checked_at";
     private static final String KEY_LAST_LATEST_VERSION = "last_latest_version";
     private static final String KEY_LAST_DOWNLOAD_URL = "last_download_url";
+    private static final String KEY_LAST_RELEASE_URL = "last_release_url";
+    private static final String KEY_LAST_NOTES = "last_notes";
+    private static final String KEY_LAST_PUBLISHED_AT = "last_published_at";
 
     private ApiService api;
     private TokenStore store;
@@ -57,6 +60,10 @@ public final class SettingsFragment extends BaseAuthedFragment {
     private MaterialButton updateNowBtn;
     private SharedPreferences appUpdatePrefs;
     private String latestDownloadUrl;
+    private String latestReleaseUrl;
+    private String latestNotes;
+    private String latestPublishedAt;
+    private String latestVersion;
 
     private boolean binding = false;
     private Call<ApiResponse<SettingsData>> loadCall;
@@ -91,7 +98,7 @@ public final class SettingsFragment extends BaseAuthedFragment {
                 appUpdatePrefs.edit().putBoolean(KEY_AUTO_CHECK, isChecked).apply()
         );
         checkUpdateBtn.setOnClickListener(vv -> checkForAppUpdate(true));
-        updateNowBtn.setOnClickListener(vv -> openLatestDownload());
+        updateNowBtn.setOnClickListener(vv -> openAppUpdate());
         renderLastAppUpdateState();
 
         boolean canEdit = "super_admin".equalsIgnoreCase(store.getRole());
@@ -112,6 +119,10 @@ public final class SettingsFragment extends BaseAuthedFragment {
         long lastCheckedAt = appUpdatePrefs.getLong(KEY_LAST_CHECKED_AT, 0L);
         String latestVer = appUpdatePrefs.getString(KEY_LAST_LATEST_VERSION, null);
         latestDownloadUrl = appUpdatePrefs.getString(KEY_LAST_DOWNLOAD_URL, null);
+        latestReleaseUrl = appUpdatePrefs.getString(KEY_LAST_RELEASE_URL, null);
+        latestNotes = appUpdatePrefs.getString(KEY_LAST_NOTES, null);
+        latestPublishedAt = appUpdatePrefs.getString(KEY_LAST_PUBLISHED_AT, null);
+        latestVersion = latestVer;
 
         if (lastCheckedAt <= 0) {
             appUpdateStatusText.setText("Last check: never");
@@ -121,11 +132,12 @@ public final class SettingsFragment extends BaseAuthedFragment {
 
         String msg = "Last check: " + android.text.format.DateFormat.format("yyyy-MM-dd HH:mm", lastCheckedAt);
         if (latestVer != null && !latestVer.trim().isEmpty()) {
-            msg += " · Latest: " + latestVer;
+            msg += " Â· Latest: " + latestVer;
         }
         appUpdateStatusText.setText(msg);
 
-        if (latestVer != null && isNewer(latestVer, BuildConfig.VERSION_NAME) && latestDownloadUrl != null && !latestDownloadUrl.trim().isEmpty()) {
+        boolean hasUrl = (latestReleaseUrl != null && !latestReleaseUrl.trim().isEmpty()) || (latestDownloadUrl != null && !latestDownloadUrl.trim().isEmpty());
+        if (latestVer != null && isNewer(latestVer, BuildConfig.VERSION_NAME) && hasUrl) {
             updateNowBtn.setVisibility(View.VISIBLE);
         } else {
             updateNowBtn.setVisibility(View.GONE);
@@ -156,19 +168,24 @@ public final class SettingsFragment extends BaseAuthedFragment {
         try { return Integer.parseInt(s.trim()); } catch (Exception e) { return 0; }
     }
 
-    private void openLatestDownload() {
-        if (latestDownloadUrl == null || latestDownloadUrl.trim().isEmpty()) {
+    private void openAppUpdate() {
+        String bestUrl = null;
+        if (latestReleaseUrl != null && !latestReleaseUrl.trim().isEmpty()) bestUrl = latestReleaseUrl;
+        else if (latestDownloadUrl != null && !latestDownloadUrl.trim().isEmpty()) bestUrl = latestDownloadUrl;
+
+        if (bestUrl == null) {
             Context ctx = getContext();
-            if (ctx != null) Toast.makeText(ctx, "No download URL available", Toast.LENGTH_SHORT).show();
+            if (ctx != null) Toast.makeText(ctx, "No update link available", Toast.LENGTH_SHORT).show();
             return;
         }
-        try {
-            Intent i = new Intent(Intent.ACTION_VIEW, Uri.parse(latestDownloadUrl));
-            startActivity(i);
-        } catch (Exception e) {
-            Context ctx = getContext();
-            if (ctx != null) Toast.makeText(ctx, "Cannot open link", Toast.LENGTH_SHORT).show();
-        }
+
+        Intent i = new Intent(requireContext(), AppUpdateActivity.class);
+        if (latestVersion != null) i.putExtra(AppUpdateActivity.EXTRA_LATEST_VERSION, latestVersion);
+        if (latestDownloadUrl != null) i.putExtra(AppUpdateActivity.EXTRA_DOWNLOAD_URL, latestDownloadUrl);
+        if (latestReleaseUrl != null) i.putExtra(AppUpdateActivity.EXTRA_RELEASE_URL, latestReleaseUrl);
+        if (latestNotes != null) i.putExtra(AppUpdateActivity.EXTRA_NOTES, latestNotes);
+        if (latestPublishedAt != null) i.putExtra(AppUpdateActivity.EXTRA_PUBLISHED_AT, latestPublishedAt);
+        startActivity(i);
     }
 
     private void checkForAppUpdate(boolean userInitiated) {
@@ -200,17 +217,28 @@ public final class SettingsFragment extends BaseAuthedFragment {
                 AppUpdateData d = response.body().data;
                 String latestVer = d.latest != null ? d.latest.version : null;
                 String downloadUrl = d.latest != null ? d.latest.download_url : null;
+                String releaseUrl = d.latest != null ? d.latest.release_url : null;
+                String notes = d.latest != null ? d.latest.notes : null;
+                String publishedAt = d.latest != null ? d.latest.published_at : null;
 
                 appUpdatePrefs.edit()
                         .putLong(KEY_LAST_CHECKED_AT, System.currentTimeMillis())
                         .putString(KEY_LAST_LATEST_VERSION, latestVer)
                         .putString(KEY_LAST_DOWNLOAD_URL, downloadUrl)
+                        .putString(KEY_LAST_RELEASE_URL, releaseUrl)
+                        .putString(KEY_LAST_NOTES, notes)
+                        .putString(KEY_LAST_PUBLISHED_AT, publishedAt)
                         .apply();
 
                 latestDownloadUrl = downloadUrl;
+                latestReleaseUrl = releaseUrl;
+                latestNotes = notes;
+                latestPublishedAt = publishedAt;
+                latestVersion = latestVer;
                 if (d.update_available && latestVer != null) {
                     appUpdateStatusText.setText("Update available: " + latestVer);
-                    updateNowBtn.setVisibility((downloadUrl != null && !downloadUrl.trim().isEmpty()) ? View.VISIBLE : View.GONE);
+                    boolean hasUrl = (releaseUrl != null && !releaseUrl.trim().isEmpty()) || (downloadUrl != null && !downloadUrl.trim().isEmpty());
+                    updateNowBtn.setVisibility(hasUrl ? View.VISIBLE : View.GONE);
                     updateNowBtn.setEnabled(true);
                     Context ctx = getContext();
                     if (ctx != null && userInitiated) Toast.makeText(ctx, "New version available: " + latestVer, Toast.LENGTH_SHORT).show();
@@ -364,3 +392,5 @@ public final class SettingsFragment extends BaseAuthedFragment {
         super.onDestroyView();
     }
 }
+
+

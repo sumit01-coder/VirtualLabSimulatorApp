@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 // android_api/app_update.php
 // Public app update feed (safe to call without auth).
 //
@@ -37,6 +37,16 @@ function read_str(string $key, string $default = ''): string
     if (!is_scalar($v)) return $default;
     $v = trim((string)$v);
     return $v === '' ? $default : $v;
+}
+
+function read_bool(string $key, bool $default = false): bool
+{
+    if (!isset($_GET[$key])) return $default;
+    $v = $_GET[$key];
+    if (!is_scalar($v)) return $default;
+    $v = strtolower(trim((string)$v));
+    if ($v === '') return $default;
+    return in_array($v, ['1', 'true', 'yes', 'y', 'on'], true);
 }
 
 function cache_path(string $name): string
@@ -90,6 +100,8 @@ function find_apk_url(array $release): ?string
 $repo = read_str('repo', 'sumit01-coder/VirtualLabSimulatorApp');
 $currentVersion = normalize_tag(read_str('current_version', '0.0.0'));
 $platform = strtolower(read_str('platform', 'android'));
+$redirect = read_bool('redirect', false);
+$target = strtolower(read_str('target', 'download')); // download|release
 
 $cacheFile = cache_path('github_release_' . preg_replace('/[^a-zA-Z0-9_\\-\\.]/', '_', $repo) . '.json');
 $cacheTtl = 300; // seconds
@@ -108,6 +120,7 @@ $release = $cached;
 if (!$release) {
     $release = http_get_json("https://api.github.com/repos/" . rawurlencode($repo) . "/releases/latest");
     if (is_array($release)) {
+        @mkdir(dirname($cacheFile), 0777, true);
         @file_put_contents($cacheFile, json_encode($release, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
     }
 }
@@ -129,6 +142,15 @@ $notes = (string)($release['body'] ?? '');
 $apkUrl = find_apk_url($release);
 
 $updateAvailable = version_compare($tag, $currentVersion, '>');
+
+if ($redirect) {
+    $redirectUrl = $target === 'release' ? $htmlUrl : ($apkUrl ?: $htmlUrl);
+    if ($redirectUrl !== '') {
+        header('Location: ' . $redirectUrl, true, 302);
+        exit;
+    }
+}
+
 
 json_out(true, 'OK', [
     'repo' => $repo,
