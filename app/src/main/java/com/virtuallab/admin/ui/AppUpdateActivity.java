@@ -8,6 +8,7 @@ import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.Uri;
+import android.animation.PropertyValuesHolder;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
@@ -66,7 +67,7 @@ public final class AppUpdateActivity extends AppCompatActivity {
     private String publishedAt;
 
     private long downloadId = -1L;
-    private ObjectAnimator rotateAnim;
+    private ObjectAnimator downloadAnim;
     private BroadcastReceiver downloadReceiver;
 
     private TextView progressText;
@@ -350,13 +351,15 @@ public final class AppUpdateActivity extends AppCompatActivity {
         progress.setProgressCompat(0, true);
         downloadBtn.setEnabled(false);
 
-        if (rotateAnim == null) {
-            rotateAnim = ObjectAnimator.ofFloat(animIcon, View.ROTATION, 0f, 360f);
-            rotateAnim.setDuration(900);
-            rotateAnim.setRepeatCount(ObjectAnimator.INFINITE);
-            rotateAnim.setInterpolator(new LinearInterpolator());
+        if (downloadAnim == null) {
+            PropertyValuesHolder moveY = PropertyValuesHolder.ofFloat(View.TRANSLATION_Y, -15f, 15f);
+            PropertyValuesHolder alpha = PropertyValuesHolder.ofFloat(View.ALPHA, 0f, 1f, 0f);
+            downloadAnim = ObjectAnimator.ofPropertyValuesHolder(animIcon, moveY, alpha);
+            downloadAnim.setDuration(1200);
+            downloadAnim.setRepeatCount(ObjectAnimator.INFINITE);
+            downloadAnim.setInterpolator(new LinearInterpolator());
         }
-        if (!rotateAnim.isStarted()) rotateAnim.start();
+        if (!downloadAnim.isStarted()) downloadAnim.start();
 
         if (progressRunnable == null) {
             progressRunnable = new Runnable() {
@@ -383,14 +386,17 @@ public final class AppUpdateActivity extends AppCompatActivity {
                     long bytesDownloaded = c.getLong(c.getColumnIndexOrThrow(DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR));
                     long bytesTotal = c.getLong(c.getColumnIndexOrThrow(DownloadManager.COLUMN_TOTAL_SIZE_BYTES));
                     if (bytesTotal > 0) {
-                        progress.setIndeterminate(false);
                         int currentProgress = (int) ((bytesDownloaded * 100L) / bytesTotal);
-                        progress.setProgressCompat(currentProgress, true);
+                        if (progress.getProgress() != currentProgress) {
+                            progress.setProgressCompat(currentProgress, true);
+                        }
                         String dlmb = String.format("%.1f", bytesDownloaded / (1024f * 1024f));
                         String totmb = String.format("%.1f", bytesTotal / (1024f * 1024f));
                         progressText.setText(currentProgress + "% (" + dlmb + " MB / " + totmb + " MB)");
                     } else {
-                        progress.setIndeterminate(true);
+                        if (progress.getProgress() != 0) {
+                            progress.setProgressCompat(0, true);
+                        }
                         progressText.setText("Starting...");
                     }
                 }
@@ -401,9 +407,10 @@ public final class AppUpdateActivity extends AppCompatActivity {
     private void stopDownloadingUi() {
         progress.setVisibility(View.GONE);
         progressText.setVisibility(View.GONE);
-        if (rotateAnim != null) {
-            rotateAnim.cancel();
-            animIcon.setRotation(0f);
+        if (downloadAnim != null) {
+            downloadAnim.cancel();
+            animIcon.setTranslationY(0f);
+            animIcon.setAlpha(1f);
         }
         if (progressRunnable != null) {
             progressHandler.removeCallbacks(progressRunnable);
