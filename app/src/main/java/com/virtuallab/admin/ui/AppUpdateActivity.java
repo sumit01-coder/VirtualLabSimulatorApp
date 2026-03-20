@@ -73,6 +73,7 @@ public final class AppUpdateActivity extends AppCompatActivity {
     private TextView progressText;
     private Handler progressHandler;
     private Runnable progressRunnable;
+    private boolean hasPromptedInstall = false;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -236,6 +237,7 @@ public final class AppUpdateActivity extends AppCompatActivity {
 
         try {
             downloadId = dm.enqueue(req);
+            hasPromptedInstall = false;
         } catch (Exception e) {
             downloadId = -1L;
             toast("Download failed to start");
@@ -266,12 +268,17 @@ public final class AppUpdateActivity extends AppCompatActivity {
 
             if (status == DownloadManager.STATUS_SUCCESSFUL) {
                 stopDownloadingUi();
-                statusText.setText("Downloaded. Tap Install.");
+                statusText.setText("Downloaded");
                 Uri apkUri = dm.getUriForDownloadedFile(downloadId);
                 downloadBtn.setText("Install update");
                 downloadBtn.setEnabled(true);
                 downloadBtn.setOnClickListener(v -> installApk(apkUri));
                 detachReceiver();
+                
+                if (!hasPromptedInstall) {
+                    hasPromptedInstall = true;
+                    installApk(apkUri);
+                }
                 return;
             }
 
