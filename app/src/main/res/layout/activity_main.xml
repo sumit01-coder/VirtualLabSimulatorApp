@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:fitsSystemWindows="true"
     android:background="@color/bg_dark">
 
     <com.google.android.material.appbar.AppBarLayout
@@ -11,19 +11,18 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@color/bg_dark"
-        android:fitsSystemWindows="true"
         app:liftOnScroll="true">
 
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:theme="@style/ThemeOverlay.MaterialComponents.Dark.ActionBar"
+            android:theme="@style/ThemeOverlay.Material3.ActionBar"
             app:title="@string/app_name"
             app:titleTextColor="@color/text_primary"
             app:subtitleTextColor="@color/text_muted"
             app:menu="@menu/main_toolbar_menu"
-            app:popupTheme="@style/ThemeOverlay.MaterialComponents.Dark" />
+            app:popupTheme="@style/ThemeOverlay.Material3" />
     </com.google.android.material.appbar.AppBarLayout>
 
     <FrameLayout

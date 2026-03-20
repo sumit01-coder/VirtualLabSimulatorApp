@@ -45,6 +45,7 @@ public final class DepartmentsFragment extends BaseAuthedFragment implements Dep
     private TextView countText;
     private TextView emptyText;
     private FloatingActionButton addFab;
+    private RecyclerView list;
 
     private DepartmentsAdapter adapter;
     private final List<Department> all = new ArrayList<>();
@@ -64,7 +65,7 @@ public final class DepartmentsFragment extends BaseAuthedFragment implements Dep
         emptyText = v.findViewById(R.id.emptyText);
         addFab = v.findViewById(R.id.addFab);
 
-        RecyclerView list = v.findViewById(R.id.list);
+        list = v.findViewById(R.id.list);
         adapter = new DepartmentsAdapter(this);
         list.setLayoutManager(new LinearLayoutManager(getContext()));
         list.setAdapter(adapter);
@@ -114,6 +115,7 @@ public final class DepartmentsFragment extends BaseAuthedFragment implements Dep
                 all.addAll(response.body().data);
                 adapter.submit(all);
                 adapter.setQuery(searchInput.getText() != null ? searchInput.getText().toString() : "");
+                if (list != null) list.scheduleLayoutAnimation();
                 updateCountAndEmpty();
             }
 
@@ -299,6 +301,7 @@ public final class DepartmentsFragment extends BaseAuthedFragment implements Dep
         countText = null;
         emptyText = null;
         addFab = null;
+        list = null;
         super.onDestroyView();
     }
 }

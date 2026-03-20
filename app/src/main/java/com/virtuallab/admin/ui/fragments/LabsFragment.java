@@ -52,6 +52,7 @@ public final class LabsFragment extends BaseAuthedFragment implements LabsAdapte
     private TextView countText;
     private TextView emptyText;
     private FloatingActionButton addFab;
+    private RecyclerView list;
 
     private LabsAdapter adapter;
     private final List<Lab> all = new ArrayList<>();
@@ -81,7 +82,7 @@ public final class LabsFragment extends BaseAuthedFragment implements LabsAdapte
         emptyText = v.findViewById(R.id.emptyText);
         addFab = v.findViewById(R.id.addFab);
 
-        RecyclerView list = v.findViewById(R.id.list);
+        list = v.findViewById(R.id.list);
         adapter = new LabsAdapter(this);
         list.setLayoutManager(new LinearLayoutManager(getContext()));
         list.setAdapter(adapter);
@@ -209,6 +210,7 @@ public final class LabsFragment extends BaseAuthedFragment implements LabsAdapte
                 all.addAll(response.body().data);
                 adapter.submit(all);
                 adapter.setQuery(searchInput.getText() != null ? searchInput.getText().toString() : "");
+                if (list != null) list.scheduleLayoutAnimation();
                 updateCountAndEmpty();
             }
 
@@ -426,6 +428,7 @@ public final class LabsFragment extends BaseAuthedFragment implements LabsAdapte
         countText = null;
         emptyText = null;
         addFab = null;
+        list = null;
         super.onDestroyView();
     }
 }

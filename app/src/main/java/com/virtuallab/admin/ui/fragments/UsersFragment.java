@@ -34,6 +34,7 @@ public final class UsersFragment extends BaseAuthedFragment {
     private ApiService api;
     private SwipeRefreshLayout swipe;
     private UsersAdapter adapter;
+    private RecyclerView list;
     private TextView countText;
     private TextView emptyText;
     private TextInputEditText searchInput;
@@ -46,7 +47,7 @@ public final class UsersFragment extends BaseAuthedFragment {
         api = ApiClient.get(store);
 
         swipe = v.findViewById(R.id.swipe);
-        RecyclerView list = v.findViewById(R.id.list);
+        list = v.findViewById(R.id.list);
         countText = v.findViewById(R.id.countText);
         emptyText = v.findViewById(R.id.emptyText);
         searchInput = v.findViewById(R.id.searchInput);
@@ -100,6 +101,7 @@ public final class UsersFragment extends BaseAuthedFragment {
                     return;
                 }
                 if (adapter != null) adapter.submit(response.body().data);
+                if (list != null) list.scheduleLayoutAnimation();
                 updateCountAndEmpty();
             }
 
@@ -165,6 +167,7 @@ public final class UsersFragment extends BaseAuthedFragment {
             pendingCall = null;
         }
         swipe = null;
+        list = null;
         countText = null;
         emptyText = null;
         searchInput = null;

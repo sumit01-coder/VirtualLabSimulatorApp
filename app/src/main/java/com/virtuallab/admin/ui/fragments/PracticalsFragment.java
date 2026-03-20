@@ -41,6 +41,7 @@ public final class PracticalsFragment extends BaseAuthedFragment {
     private ApiService api;
     private SwipeRefreshLayout swipe;
     private PracticalsAdapter adapter;
+    private RecyclerView list;
     private TextInputEditText searchInput;
     private MaterialAutoCompleteTextView deptFilterInput;
     private TextView countText;
@@ -55,7 +56,7 @@ public final class PracticalsFragment extends BaseAuthedFragment {
         api = ApiClient.get(store);
 
         swipe = v.findViewById(R.id.swipe);
-        RecyclerView list = v.findViewById(R.id.list);
+        list = v.findViewById(R.id.list);
         searchInput = v.findViewById(R.id.searchInput);
         deptFilterInput = v.findViewById(R.id.deptFilterInput);
         countText = v.findViewById(R.id.countText);
@@ -113,6 +114,7 @@ public final class PracticalsFragment extends BaseAuthedFragment {
                 }
 
                 adapter.submit(response.body().data);
+                if (list != null) list.scheduleLayoutAnimation();
                 bindDepartments(response.body().data);
                 updateCountAndEmpty();
             }
@@ -224,6 +226,7 @@ public final class PracticalsFragment extends BaseAuthedFragment {
             pendingCall = null;
         }
         swipe = null;
+        list = null;
         searchInput = null;
         deptFilterInput = null;
         countText = null;

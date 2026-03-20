@@ -1,5 +1,8 @@
 package com.virtuallab.admin.ui.fragments;
 
+import android.content.ClipData;
+import android.content.ClipboardManager;
+import android.content.Context;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -17,6 +20,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.android.material.button.MaterialButton;
 import com.google.android.material.switchmaterial.SwitchMaterial;
 import com.google.android.material.textfield.TextInputEditText;
 import com.virtuallab.admin.R;
@@ -45,7 +49,7 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 public final class DdosFragment extends BaseAuthedFragment
-        implements DdosTopIpsAdapter.Listener, DdosBlockedAdapter.Listener {
+        implements DdosTopIpsAdapter.Listener, DdosBlockedAdapter.Listener, DdosRecentAdapter.Listener {
     private static final int AUTO_REFRESH_SECONDS = 5;
 
     private ApiService api;
@@ -70,6 +74,7 @@ public final class DdosFragment extends BaseAuthedFragment
     private TextView blockedEmpty;
     private TextView topEmpty;
     private TextView recentEmpty;
+    private MaterialButton manualBlockBtn;
 
     private DdosBlockedAdapter blockedAdapter;
     private DdosTopIpsAdapter topIpsAdapter;
@@ -79,6 +84,7 @@ public final class DdosFragment extends BaseAuthedFragment
     private int countdown = AUTO_REFRESH_SECONDS;
 
     private int inFlightLoads = 0;
+    private String selectedIp = "";
 
     private Call<ApiResponse<DdosOverview>> overviewCall;
     private Call<ApiResponse<List<DdosBlockedIp>>> blockedCall;
@@ -129,7 +135,7 @@ public final class DdosFragment extends BaseAuthedFragment
 
         blockedAdapter = new DdosBlockedAdapter(this);
         topIpsAdapter = new DdosTopIpsAdapter(this);
-        recentAdapter = new DdosRecentAdapter();
+        recentAdapter = new DdosRecentAdapter(this);
 
         blockedList.setLayoutManager(new LinearLayoutManager(getContext()));
         blockedList.setAdapter(blockedAdapter);
@@ -138,8 +144,9 @@ public final class DdosFragment extends BaseAuthedFragment
         recentList.setLayoutManager(new LinearLayoutManager(getContext()));
         recentList.setAdapter(recentAdapter);
 
-        View blockBtn = v.findViewById(R.id.blockBtn);
-        if (blockBtn != null) blockBtn.setOnClickListener(view -> showManualBlockDialog());
+        manualBlockBtn = v.findViewById(R.id.blockBtn);
+        if (manualBlockBtn != null) manualBlockBtn.setOnClickListener(view -> showManualBlockDialog(selectedIp));
+        updateManualBlockLabel();
 
         if (autoRefreshSwitch != null) {
             autoRefreshSwitch.setChecked(true);
@@ -209,6 +216,7 @@ public final class DdosFragment extends BaseAuthedFragment
                 }
                 List<DdosBlockedIp> rows = body.data;
                 blockedAdapter.submit(rows);
+                if (blockedList != null) blockedList.scheduleLayoutAnimation();
                 if (blockedEmpty != null) blockedEmpty.setVisibility(rows == null || rows.isEmpty() ? View.VISIBLE : View.GONE);
             }
 
@@ -238,6 +246,7 @@ public final class DdosFragment extends BaseAuthedFragment
                 }
                 List<DdosTopIp> rows = body.data;
                 topIpsAdapter.submit(rows);
+                if (topIpsList != null) topIpsList.scheduleLayoutAnimation();
                 if (topEmpty != null) topEmpty.setVisibility(rows == null || rows.isEmpty() ? View.VISIBLE : View.GONE);
             }
 
@@ -267,6 +276,7 @@ public final class DdosFragment extends BaseAuthedFragment
                 }
                 List<DdosRecentRequest> rows = body.data;
                 recentAdapter.submit(rows);
+                if (recentList != null) recentList.scheduleLayoutAnimation();
                 if (recentEmpty != null) recentEmpty.setVisibility(rows == null || rows.isEmpty() ? View.VISIBLE : View.GONE);
             }
 
@@ -323,12 +333,16 @@ public final class DdosFragment extends BaseAuthedFragment
         if (lastUpdated != null) lastUpdated.setText("Updated: " + f.format(tsMs));
     }
 
-    private void showManualBlockDialog() {
+    private void showManualBlockDialog(String prefillIp) {
         if (!isAdded()) return;
         View content = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_block_ip, null, false);
         TextInputEditText ipInput = content.findViewById(R.id.ipInput);
         TextInputEditText durationInput = content.findViewById(R.id.durationInput);
         if (durationInput != null) durationInput.setText("3600");
+        if (ipInput != null && prefillIp != null && !prefillIp.trim().isEmpty()) {
+            ipInput.setText(prefillIp.trim());
+            if (ipInput.getText() != null) ipInput.setSelection(ipInput.getText().length());
+        }
 
         new MaterialAlertDialogBuilder(requireContext())
                 .setTitle("Block IP")
@@ -381,6 +395,101 @@ public final class DdosFragment extends BaseAuthedFragment
                 .setNegativeButton("Cancel", null)
                 .setPositiveButton("Unblock", (d, which) -> doUnblock(ip.ip))
                 .show();
+    }
+
+    @Override
+    public void onSelectIp(String ip) {
+        if (!isAdded()) return;
+        setSelectedIp(ip);
+        showIpActions(ip, false);
+    }
+
+    @Override
+    public void onSelectBlockedIp(String ip) {
+        if (!isAdded()) return;
+        setSelectedIp(ip);
+        showIpActions(ip, true);
+    }
+
+    private void setSelectedIp(String ip) {
+        selectedIp = ip != null ? ip : "";
+        if (topIpsAdapter != null) topIpsAdapter.setSelectedIp(selectedIp);
+        if (blockedAdapter != null) blockedAdapter.setSelectedIp(selectedIp);
+        if (recentAdapter != null) recentAdapter.setSelectedIp(selectedIp);
+        updateManualBlockLabel();
+    }
+
+    private void updateManualBlockLabel() {
+        if (manualBlockBtn == null) return;
+        if (selectedIp == null || selectedIp.trim().isEmpty()) manualBlockBtn.setText("Block IP");
+        else manualBlockBtn.setText("Block selected");
+    }
+
+    private void showIpActions(String ip, boolean isBlocked) {
+        if (!isAdded() || TextUtils.isEmpty(ip)) return;
+
+        java.util.ArrayList<String> labels = new java.util.ArrayList<>();
+        labels.add("Copy IP");
+        if (isBlocked) labels.add("Unblock");
+        labels.add("Block 10 minutes");
+        labels.add("Block 1 hour");
+        labels.add("Block 24 hours");
+        labels.add("Custom duration…");
+        if (selectedIp != null && !selectedIp.trim().isEmpty()) labels.add("Clear selection");
+
+        String[] items = labels.toArray(new String[0]);
+
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle(ip)
+                .setItems(items, (d, which) -> {
+                    String choice = items[which];
+                    if ("Copy IP".equals(choice)) {
+                        copyToClipboard(ip);
+                        toast("Copied " + ip);
+                        return;
+                    }
+                    if ("Unblock".equals(choice)) {
+                        confirmUnblock(ip);
+                        return;
+                    }
+                    if ("Block 10 minutes".equals(choice)) {
+                        doBlock(ip, 600);
+                        return;
+                    }
+                    if ("Block 1 hour".equals(choice)) {
+                        doBlock(ip, 3600);
+                        return;
+                    }
+                    if ("Block 24 hours".equals(choice)) {
+                        doBlock(ip, 86400);
+                        return;
+                    }
+                    if ("Custom duration…".equals(choice)) {
+                        showManualBlockDialog(ip);
+                        return;
+                    }
+                    if ("Clear selection".equals(choice)) {
+                        setSelectedIp("");
+                    }
+                })
+                .show();
+    }
+
+    private void confirmUnblock(String ip) {
+        if (!isAdded() || TextUtils.isEmpty(ip)) return;
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle("Unblock " + ip + "?")
+                .setMessage("Remove this IP from the block list?")
+                .setNegativeButton("Cancel", null)
+                .setPositiveButton("Unblock", (d, which) -> doUnblock(ip))
+                .show();
+    }
+
+    private void copyToClipboard(String ip) {
+        if (!isAdded() || getContext() == null) return;
+        ClipboardManager cm = (ClipboardManager) requireContext().getSystemService(Context.CLIPBOARD_SERVICE);
+        if (cm == null) return;
+        cm.setPrimaryClip(ClipData.newPlainText("IP", ip));
     }
 
     private void doBlock(String ip, int durationSeconds) {

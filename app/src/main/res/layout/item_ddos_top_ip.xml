@@ -5,6 +5,10 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_marginBottom="@dimen/space_sm"
+    android:clickable="true"
+    android:focusable="true"
+    android:foreground="?attr/selectableItemBackground"
+    android:stateListAnimator="@animator/vl_press_state"
     app:strokeColor="@color/stroke">
 
     <LinearLayout
@@ -102,17 +106,18 @@
                 android:layout_marginStart="6dp" />
         </LinearLayout>
 
-        <TextView
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/block"
             android:layout_width="wrap_content"
             android:layout_height="@dimen/btn_h_sm"
             android:layout_marginTop="@dimen/space_sm"
-            android:gravity="center"
-            android:text="Block 1h"
+            android:text="Actions"
             android:textColor="@android:color/white"
-            android:paddingLeft="@dimen/space_md"
-            android:paddingRight="@dimen/space_md"
-            android:background="@color/danger" />
+            style="@style/Widget.VirtualLab.Button.Small"
+            app:icon="@drawable/ic_security_24"
+            app:iconTint="@android:color/white"
+            app:iconPadding="@dimen/space_xs"
+            app:backgroundTint="@color/brand" />
 
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>

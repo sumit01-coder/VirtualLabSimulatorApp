@@ -3,10 +3,16 @@ package com.virtuallab.admin.ui;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
+import android.view.ViewGroup;
+import android.widget.FrameLayout;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.Fragment;
 import androidx.work.Constraints;
 import androidx.work.ExistingPeriodicWorkPolicy;
@@ -40,6 +46,8 @@ public final class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        setupEdgeToEdge();
 
         TokenStore store = new TokenStore(this);
         if (!store.hasToken()) {
@@ -94,10 +102,70 @@ public final class MainActivity extends AppCompatActivity {
     }
 
     private void showFragment(Fragment f, boolean showBottomNav) {
-        bottomNav.setVisibility(showBottomNav ? View.VISIBLE : View.GONE);
+        if (bottomNav.getVisibility() != (showBottomNav ? View.VISIBLE : View.GONE)) {
+            bottomNav.animate().cancel();
+            if (showBottomNav) {
+                bottomNav.setAlpha(0f);
+                bottomNav.setVisibility(View.VISIBLE);
+                bottomNav.animate().alpha(1f).setDuration(160).start();
+            } else {
+                bottomNav.animate().alpha(0f).setDuration(140).withEndAction(() -> bottomNav.setVisibility(View.GONE)).start();
+            }
+        }
+
         getSupportFragmentManager().beginTransaction()
+                .setReorderingAllowed(true)
+                .setCustomAnimations(R.anim.vl_fade_slide_in, R.anim.vl_fade_out)
                 .replace(R.id.fragmentContainer, f)
                 .commit();
+    }
+
+    private void setupEdgeToEdge() {
+        View root = findViewById(R.id.root);
+        View appBar = findViewById(R.id.appBar);
+        BottomNavigationView nav = findViewById(R.id.bottomNav);
+        FrameLayout container = findViewById(R.id.fragmentContainer);
+
+        WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
+
+        final int appBarPadLeft = appBar.getPaddingLeft();
+        final int appBarPadTop = appBar.getPaddingTop();
+        final int appBarPadRight = appBar.getPaddingRight();
+        final int appBarPadBottom = appBar.getPaddingBottom();
+
+        final int navPadLeft = nav.getPaddingLeft();
+        final int navPadTop = nav.getPaddingTop();
+        final int navPadRight = nav.getPaddingRight();
+        final int navPadBottom = nav.getPaddingBottom();
+
+        final ViewGroup.MarginLayoutParams startLp = (ViewGroup.MarginLayoutParams) container.getLayoutParams();
+        final int startBottomMargin = startLp.bottomMargin;
+
+        ViewCompat.setOnApplyWindowInsetsListener(root, (v, insets) -> {
+            Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+
+            appBar.setPadding(
+                    appBarPadLeft + bars.left,
+                    appBarPadTop + bars.top,
+                    appBarPadRight + bars.right,
+                    appBarPadBottom
+            );
+
+            nav.setPadding(
+                    navPadLeft + bars.left,
+                    navPadTop,
+                    navPadRight + bars.right,
+                    navPadBottom + bars.bottom
+            );
+
+            ViewGroup.MarginLayoutParams lp = (ViewGroup.MarginLayoutParams) container.getLayoutParams();
+            lp.bottomMargin = startBottomMargin + bars.bottom;
+            container.setLayoutParams(lp);
+
+            return insets;
+        });
+
+        ViewCompat.requestApplyInsets(root);
     }
 
     private void ensureNotificationPermission() {

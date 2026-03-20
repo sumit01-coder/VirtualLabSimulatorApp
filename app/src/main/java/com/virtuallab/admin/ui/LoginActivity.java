@@ -8,8 +8,11 @@ import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 import android.widget.TextView;
+import android.view.ViewGroup;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.transition.AutoTransition;
+import androidx.transition.TransitionManager;
 
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
@@ -52,6 +55,7 @@ public final class LoginActivity extends AppCompatActivity {
     protected void onCreate( Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
+        com.virtuallab.admin.ui.views.EdgeToEdge.enable(this, findViewById(R.id.root));
 
         tokenStore = new TokenStore(this);
         api = ApiClient.get(tokenStore);
@@ -116,7 +120,9 @@ public final class LoginActivity extends AppCompatActivity {
                      tempToken = body.data.temp_token;
                      currentUsername = username;
                      currentPassword = password;
-                     
+
+                     ViewGroup root = findViewById(R.id.root);
+                     TransitionManager.beginDelayedTransition(root, new AutoTransition().setDuration(220));
                      passwordLayout.setVisibility(View.GONE);
                      loginButton.setVisibility(View.GONE);
                      
@@ -254,6 +260,8 @@ public final class LoginActivity extends AppCompatActivity {
         currentUsername = "";
         currentPassword = "";
 
+        ViewGroup root = findViewById(R.id.root);
+        TransitionManager.beginDelayedTransition(root, new AutoTransition().setDuration(220));
         otpInput.setText("");
         otpLayout.setVisibility(View.GONE);
         verifyOtpButton.setVisibility(View.GONE);

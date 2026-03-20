@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="bg_dark">#020818</color>
-    <color name="bg_surface">#1E293B</color>
-    <color name="stroke">#334155</color>
-    <color name="brand">#3B82F6</color>
-    <color name="text_primary">#F8FAFC</color>
-    <color name="text_muted">#94A3B8</color>
+    <!-- Day (light) palette; overridden in values-night/ -->
+    <color name="bg_dark">#F8FAFC</color>
+    <color name="bg_surface">#FFFFFF</color>
+    <color name="stroke">#E2E8F0</color>
+    <color name="brand">#2563EB</color>
+    <color name="text_primary">#0F172A</color>
+    <color name="text_muted">#475569</color>
     <color name="success">#10B981</color>
     <color name="warn">#F59E0B</color>
     <color name="danger">#EF4444</color>

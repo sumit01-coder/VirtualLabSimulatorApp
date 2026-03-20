@@ -10,12 +10,14 @@ import com.google.android.material.appbar.MaterialToolbar;
 import com.virtuallab.admin.R;
 import com.virtuallab.admin.data.TokenStore;
 import com.virtuallab.admin.ui.fragments.UsersFragment;
+import com.virtuallab.admin.ui.views.EdgeToEdge;
 
 public final class UsersActivity extends AppCompatActivity {
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_users);
+        EdgeToEdge.enable(this, findViewById(R.id.root), true, true);
 
         TokenStore store = new TokenStore(this);
         if (!store.hasToken()) {

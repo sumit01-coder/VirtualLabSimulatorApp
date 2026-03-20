@@ -48,6 +48,7 @@ public final class TicketsFragment extends BaseAuthedFragment implements Tickets
     private MaterialAutoCompleteTextView statusFilterInput;
     private TextView countText;
     private TextView emptyText;
+    private RecyclerView list;
 
     private Call<ApiResponse<List<Ticket>>> pendingLoad;
     private Call<ApiResponse<Object>> pendingAction;
@@ -59,7 +60,7 @@ public final class TicketsFragment extends BaseAuthedFragment implements Tickets
         api = ApiClient.get(store);
 
         swipe = v.findViewById(R.id.swipe);
-        RecyclerView list = v.findViewById(R.id.list);
+        list = v.findViewById(R.id.list);
         searchInput = v.findViewById(R.id.searchInput);
         statusFilterInput = v.findViewById(R.id.statusFilterInput);
         countText = v.findViewById(R.id.countText);
@@ -118,6 +119,7 @@ public final class TicketsFragment extends BaseAuthedFragment implements Tickets
                 all.clear();
                 all.addAll(response.body().data);
                 applyFilter();
+                if (list != null) list.scheduleLayoutAnimation();
             }
 
             @Override
@@ -237,6 +239,7 @@ public final class TicketsFragment extends BaseAuthedFragment implements Tickets
         statusFilterInput = null;
         countText = null;
         emptyText = null;
+        list = null;
         super.onDestroyView();
     }
 }
