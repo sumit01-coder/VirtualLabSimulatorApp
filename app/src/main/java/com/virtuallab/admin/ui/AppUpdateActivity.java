@@ -30,6 +30,7 @@ import com.google.android.material.progressindicator.CircularProgressIndicator;
 import com.virtuallab.admin.BuildConfig;
 import com.virtuallab.admin.R;
 import com.virtuallab.admin.ui.views.EdgeToEdge;
+import com.virtuallab.admin.work.ApkInstaller;
 
 import android.animation.ObjectAnimator;
 
@@ -49,6 +50,7 @@ public final class AppUpdateActivity extends AppCompatActivity {
     private static final String KEY_LAST_PUBLISHED_AT = "last_published_at";
     private static final String KEY_LAST_DOWNLOAD_ID = "last_download_id";
     private static final String KEY_DOWNLOADED_APK_URI = "downloaded_apk_uri";
+    private static final String KEY_DOWNLOADED_APK_VERSION = "downloaded_apk_version";
     private static final String STATE_DOWNLOAD_ID = "download_id";
 
     private TextView currentVersionText;
@@ -144,6 +146,13 @@ public final class AppUpdateActivity extends AppCompatActivity {
             autoInstall = false;
             maybeInstallCachedApk();
         }
+
+        // If the app was updated, clear any stale cached APK.
+        SharedPreferences p = getSharedPreferences(APP_UPDATE_PREFS, Context.MODE_PRIVATE);
+        String cachedVer = p.getString(KEY_DOWNLOADED_APK_VERSION, null);
+        if (cachedVer != null && !cachedVer.trim().isEmpty() && !isUpdateAvailable(BuildConfig.VERSION_NAME, cachedVer)) {
+            clearCachedApk();
+        }
     }
 
     @Override
@@ -212,7 +221,16 @@ public final class AppUpdateActivity extends AppCompatActivity {
 
         boolean updateAvailable = isUpdateAvailable(BuildConfig.VERSION_NAME, latestVersion);
         boolean canDownloadInApp = looksLikeApk(downloadUrl);
-        downloadBtn.setVisibility(canDownloadInApp ? View.VISIBLE : View.GONE);
+        Uri cachedApk = getCachedApkUriIfValid();
+        if (cachedApk != null) {
+            downloadBtn.setVisibility(View.VISIBLE);
+            downloadBtn.setEnabled(true);
+            downloadBtn.setText("Install downloaded update");
+            downloadBtn.setOnClickListener(v -> installApk(cachedApk));
+            statusText.setText("Downloaded - ready to install");
+        } else {
+            downloadBtn.setVisibility(canDownloadInApp ? View.VISIBLE : View.GONE);
+        }
 
         if (bestReleaseLink().isEmpty() && downloadUrl.isEmpty()) {
             openGithubBtn.setEnabled(false);
@@ -225,21 +243,44 @@ public final class AppUpdateActivity extends AppCompatActivity {
                 downloadBtn.setVisibility(View.GONE);
             }
         } else {
-            statusText.setText(canDownloadInApp ? "Ready to download" : "Open GitHub to download");
+            if (cachedApk == null) {
+                statusText.setText(canDownloadInApp ? "Ready to download" : "Open GitHub to download");
+            }
         }
     }
 
     private void maybeInstallCachedApk() {
+        Uri uri = getCachedApkUriIfValid();
+        if (uri == null) return;
+        installApk(uri);
+    }
+
+    private @Nullable Uri getCachedApkUriIfValid() {
         SharedPreferences p = getSharedPreferences(APP_UPDATE_PREFS, Context.MODE_PRIVATE);
         String uriStr = p.getString(KEY_DOWNLOADED_APK_URI, null);
-        if (uriStr == null || uriStr.trim().isEmpty()) return;
-        Uri uri;
-        try {
-            uri = Uri.parse(uriStr.trim());
-        } catch (Exception ignored) {
-            return;
+        if (uriStr == null || uriStr.trim().isEmpty()) return null;
+
+        String v = p.getString(KEY_DOWNLOADED_APK_VERSION, null);
+        if (v != null && latestVersion != null && !latestVersion.trim().isEmpty() && !v.trim().isEmpty()) {
+            if (!latestVersion.trim().equals(v.trim())) {
+                clearCachedApk();
+                return null;
+            }
         }
-        installApk(uri);
+
+        try {
+            return Uri.parse(uriStr.trim());
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
+    private void clearCachedApk() {
+        getSharedPreferences(APP_UPDATE_PREFS, Context.MODE_PRIVATE)
+                .edit()
+                .remove(KEY_DOWNLOADED_APK_URI)
+                .remove(KEY_DOWNLOADED_APK_VERSION)
+                .apply();
     }
 
     private void onPrimaryAction() {
@@ -285,6 +326,8 @@ public final class AppUpdateActivity extends AppCompatActivity {
             return;
         }
 
+        clearCachedApk();
+
         String fileName = "virtual-lab-admin" + (!latestVersion.isEmpty() ? ("-v" + latestVersion) : "") + ".apk";
 
         DownloadManager.Request req = new DownloadManager.Request(uri)
@@ -326,8 +369,8 @@ public final class AppUpdateActivity extends AppCompatActivity {
         getSharedPreferences(APP_UPDATE_PREFS, Context.MODE_PRIVATE)
                 .edit()
                 .remove(KEY_LAST_DOWNLOAD_ID)
-                .remove(KEY_DOWNLOADED_APK_URI)
                 .apply();
+        clearCachedApk();
 
         stopDownloadingUi();
         detachReceiver();
@@ -368,8 +411,11 @@ public final class AppUpdateActivity extends AppCompatActivity {
                     getSharedPreferences(APP_UPDATE_PREFS, Context.MODE_PRIVATE)
                             .edit()
                             .putString(KEY_DOWNLOADED_APK_URI, apkUri.toString())
+                            .putString(KEY_DOWNLOADED_APK_VERSION, latestVersion)
+                            .remove(KEY_LAST_DOWNLOAD_ID)
                             .apply();
                 }
+                downloadId = -1L;
                 
                 if (!hasPromptedInstall) {
                     hasPromptedInstall = true;
@@ -416,15 +462,9 @@ public final class AppUpdateActivity extends AppCompatActivity {
             return;
         }
 
-        try {
-            Intent install = new Intent(Intent.ACTION_INSTALL_PACKAGE);
-            install.setData(apkUri);
-            install.putExtra(Intent.EXTRA_NOT_UNKNOWN_SOURCE, true);
-            install.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-            install.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            startActivity(install);
-        } catch (Exception e) {
-            toast("Cannot open installer");
+        boolean started = ApkInstaller.installFromUri(this, apkUri, getPackageName());
+        if (!started) {
+            toast("Install failed to start");
         }
     }
 

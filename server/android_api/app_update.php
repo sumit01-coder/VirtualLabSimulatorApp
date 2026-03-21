@@ -58,11 +58,51 @@ function cache_path(string $name): string
 
 function http_get_json(string $url, int $timeoutSeconds = 8): ?array
 {
+    return http_get_json_meta($url, $timeoutSeconds)['json'] ?? null;
+}
+
+function parse_status_code(array $responseHeaders): int
+{
+    if (!$responseHeaders) return 0;
+    $line0 = (string)$responseHeaders[0];
+    if (preg_match('/\\s(\\d{3})\\s/', $line0, $m)) {
+        return (int)$m[1];
+    }
+    return 0;
+}
+
+function find_header(array $responseHeaders, string $name): ?string
+{
+    $name = strtolower($name);
+    foreach ($responseHeaders as $h) {
+        $h = (string)$h;
+        $pos = strpos($h, ':');
+        if ($pos === false) continue;
+        $k = strtolower(trim(substr($h, 0, $pos)));
+        if ($k !== $name) continue;
+        return trim(substr($h, $pos + 1));
+    }
+    return null;
+}
+
+function http_get_json_meta(string $url, int $timeoutSeconds = 8, ?string $etag = null): array
+{
+    $token = getenv('GITHUB_TOKEN') ?: '';
+    $headers = "User-Agent: VirtualLabAdminUpdateCheck/1.0\r\nAccept: application/vnd.github+json\r\n";
+    if ($etag) {
+        $headers .= "If-None-Match: " . $etag . "\r\n";
+    }
+    if (is_string($token) && trim($token) !== '') {
+        $headers .= "Authorization: Bearer " . trim($token) . "\r\n";
+    }
+
     $ctx = stream_context_create([
         'http' => [
             'method' => 'GET',
-            'header' => "User-Agent: VirtualLabAdminUpdateCheck/1.0\r\nAccept: application/vnd.github+json\r\n",
+            'header' => $headers,
             'timeout' => $timeoutSeconds,
+            // Allow reading response body on non-2xx to improve diagnostics.
+            'ignore_errors' => true,
         ],
         'ssl' => [
             'verify_peer' => true,
@@ -71,9 +111,23 @@ function http_get_json(string $url, int $timeoutSeconds = 8): ?array
     ]);
 
     $raw = @file_get_contents($url, false, $ctx);
-    if ($raw === false) return null;
-    $decoded = json_decode($raw, true);
-    return is_array($decoded) ? $decoded : null;
+    $responseHeaders = $http_response_header ?? [];
+    $status = parse_status_code($responseHeaders);
+    $respEtag = find_header($responseHeaders, 'ETag');
+
+    $decoded = null;
+    if (is_string($raw) && $raw !== '') {
+        $tmp = json_decode($raw, true);
+        if (is_array($tmp)) $decoded = $tmp;
+    }
+
+    return [
+        'status' => $status,
+        'etag' => $respEtag,
+        'headers' => $responseHeaders,
+        'json' => $decoded,
+        'raw' => is_string($raw) ? $raw : null,
+    ];
 }
 
 function normalize_tag(string $tag): string
@@ -125,6 +179,9 @@ $cacheFile = cache_path('github_release_' . preg_replace('/[^a-zA-Z0-9_\\-\\.]/'
 $cacheTtl = 300; // seconds
 
 $cached = null;
+$cachedRelease = null;
+$cachedEtag = null;
+$cachedFetchedAt = 0;
 if (!$noCache && is_file($cacheFile)) {
     $mtime = @filemtime($cacheFile) ?: 0;
     if ($mtime > 0 && (time() - $mtime) < $cacheTtl) {
@@ -134,15 +191,49 @@ if (!$noCache && is_file($cacheFile)) {
     }
 }
 
-$release = $cached;
-if (!$release) {
+$release = null;
+$fromCache = false;
+
+if (is_array($cached) && isset($cached['release']) && is_array($cached['release'])) {
+    $cachedRelease = $cached['release'];
+    $cachedEtag = is_string($cached['etag'] ?? null) ? (string)$cached['etag'] : null;
+    $cachedFetchedAt = (int)($cached['fetched_at'] ?? 0);
+}
+
+if (!$noCache && $cachedRelease && $cachedFetchedAt > 0 && (time() - $cachedFetchedAt) < $cacheTtl) {
+    $release = $cachedRelease;
+    $fromCache = true;
+} else {
     // IMPORTANT: do not URL-encode the "/" between owner and repo (GitHub expects /repos/{owner}/{repo}).
-    $release = http_get_json(
+    $meta = http_get_json_meta(
         "https://api.github.com/repos/" . rawurlencode($owner) . "/" . rawurlencode($repoName) . "/releases/latest"
+        ,
+        8,
+        $cachedEtag
     );
-    if (is_array($release)) {
+
+    if (($meta['status'] ?? 0) === 304 && $cachedRelease) {
+        $release = $cachedRelease;
+        $fromCache = true;
         @mkdir(dirname($cacheFile), 0777, true);
-        @file_put_contents($cacheFile, json_encode($release, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+        @file_put_contents($cacheFile, json_encode([
+            'fetched_at' => time(),
+            'etag' => $cachedEtag,
+            'release' => $cachedRelease,
+        ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+    } else if (is_array($meta['json'] ?? null)) {
+        $release = $meta['json'];
+        $fromCache = false;
+        @mkdir(dirname($cacheFile), 0777, true);
+        @file_put_contents($cacheFile, json_encode([
+            'fetched_at' => time(),
+            'etag' => $meta['etag'] ?? null,
+            'release' => $release,
+        ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+    } else if ($cachedRelease) {
+        // Fallback to last known release even if GitHub is temporarily unavailable.
+        $release = $cachedRelease;
+        $fromCache = true;
     }
 }
 
@@ -153,6 +244,7 @@ if (!is_array($release) || empty($release['tag_name'])) {
         'current_version' => $currentVersion,
         'latest' => null,
         'update_available' => false,
+        'cached' => $fromCache,
     ], 503);
 }
 
@@ -185,4 +277,5 @@ json_out(true, 'OK', [
         'notes' => $notes,
     ],
     'update_available' => $updateAvailable,
+    'cached' => $fromCache,
 ]);

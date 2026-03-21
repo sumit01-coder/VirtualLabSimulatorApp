@@ -37,6 +37,7 @@ public final class UpdatesWorker extends Worker {
     private static final String KEY_LAST_NOTES = "last_notes";
     private static final String KEY_LAST_PUBLISHED_AT = "last_published_at";
     private static final String KEY_LAST_NOTIFIED_VERSION = "last_notified_version";
+    private static final String KEY_LAST_UPDATE_AVAILABLE = "last_update_available";
 
     private static final long APP_CHECK_MIN_INTERVAL_MS = 6L * 60L * 60L * 1000L; // 6 hours
 
@@ -150,6 +151,7 @@ public final class UpdatesWorker extends Worker {
                             .putString(KEY_LAST_RELEASE_URL, releaseUrl)
                             .putString(KEY_LAST_NOTES, notes)
                             .putString(KEY_LAST_PUBLISHED_AT, publishedAt)
+                            .putBoolean(KEY_LAST_UPDATE_AVAILABLE, available)
                             .apply();
                 } else {
                     appPrefs.edit().putLong(KEY_LAST_CHECKED_AT, now).apply();

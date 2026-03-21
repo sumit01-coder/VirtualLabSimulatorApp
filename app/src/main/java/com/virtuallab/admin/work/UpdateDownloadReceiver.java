@@ -19,6 +19,7 @@ public final class UpdateDownloadReceiver extends BroadcastReceiver {
     private static final String KEY_LAST_DOWNLOAD_ID = "last_download_id";
     private static final String KEY_LAST_LATEST_VERSION = "last_latest_version";
     private static final String KEY_DOWNLOADED_APK_URI = "downloaded_apk_uri";
+    private static final String KEY_DOWNLOADED_APK_VERSION = "downloaded_apk_version";
 
     @Override
     public void onReceive(Context context, Intent intent) {
@@ -43,9 +44,12 @@ public final class UpdateDownloadReceiver extends BroadcastReceiver {
 
         if (apkUri == null) return;
 
-        prefs.edit().putString(KEY_DOWNLOADED_APK_URI, apkUri.toString()).apply();
-
         String latestVersion = prefs.getString(KEY_LAST_LATEST_VERSION, null);
+        prefs.edit()
+                .putString(KEY_DOWNLOADED_APK_URI, apkUri.toString())
+                .putString(KEY_DOWNLOADED_APK_VERSION, latestVersion)
+                .remove(KEY_LAST_DOWNLOAD_ID)
+                .apply();
         String text = (latestVersion != null && !latestVersion.trim().isEmpty())
                 ? ("Update " + latestVersion.trim() + " downloaded. Tap to install.")
                 : "Update downloaded. Tap to install.";

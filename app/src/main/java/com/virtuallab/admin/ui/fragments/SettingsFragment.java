@@ -42,6 +42,7 @@ public final class SettingsFragment extends BaseAuthedFragment {
     private static final String KEY_LAST_RELEASE_URL = "last_release_url";
     private static final String KEY_LAST_NOTES = "last_notes";
     private static final String KEY_LAST_PUBLISHED_AT = "last_published_at";
+    private static final String KEY_LAST_UPDATE_AVAILABLE = "last_update_available";
 
     private ApiService api;
     private TokenStore store;
@@ -122,6 +123,7 @@ public final class SettingsFragment extends BaseAuthedFragment {
         latestReleaseUrl = appUpdatePrefs.getString(KEY_LAST_RELEASE_URL, null);
         latestNotes = appUpdatePrefs.getString(KEY_LAST_NOTES, null);
         latestPublishedAt = appUpdatePrefs.getString(KEY_LAST_PUBLISHED_AT, null);
+        boolean updateAvailable = appUpdatePrefs.getBoolean(KEY_LAST_UPDATE_AVAILABLE, false);
         latestVersion = latestVer;
 
         if (lastCheckedAt <= 0) {
@@ -132,40 +134,16 @@ public final class SettingsFragment extends BaseAuthedFragment {
 
         String msg = "Last check: " + android.text.format.DateFormat.format("yyyy-MM-dd HH:mm", lastCheckedAt);
         if (latestVer != null && !latestVer.trim().isEmpty()) {
-            msg += " Â· Latest: " + latestVer;
+            msg += " - Latest: " + latestVer;
         }
         appUpdateStatusText.setText(msg);
 
         boolean hasUrl = (latestReleaseUrl != null && !latestReleaseUrl.trim().isEmpty()) || (latestDownloadUrl != null && !latestDownloadUrl.trim().isEmpty());
-        if (latestVer != null && isNewer(latestVer, BuildConfig.VERSION_NAME) && hasUrl) {
+        if (updateAvailable && hasUrl) {
             updateNowBtn.setVisibility(View.VISIBLE);
         } else {
             updateNowBtn.setVisibility(View.GONE);
         }
-    }
-
-    private boolean isNewer(String latest, String current) {
-        try {
-            return compareVersions(latest, current) > 0;
-        } catch (Exception e) {
-            return false;
-        }
-    }
-
-    private int compareVersions(String a, String b) {
-        String[] pa = a.replaceFirst("^[vV]", "").split("\\\\.");
-        String[] pb = b.replaceFirst("^[vV]", "").split("\\\\.");
-        int n = Math.max(pa.length, pb.length);
-        for (int i = 0; i < n; i++) {
-            int va = i < pa.length ? safeInt(pa[i]) : 0;
-            int vb = i < pb.length ? safeInt(pb[i]) : 0;
-            if (va != vb) return va - vb;
-        }
-        return 0;
-    }
-
-    private int safeInt(String s) {
-        try { return Integer.parseInt(s.trim()); } catch (Exception e) { return 0; }
     }
 
     private void openAppUpdate() {
@@ -228,6 +206,7 @@ public final class SettingsFragment extends BaseAuthedFragment {
                         .putString(KEY_LAST_RELEASE_URL, releaseUrl)
                         .putString(KEY_LAST_NOTES, notes)
                         .putString(KEY_LAST_PUBLISHED_AT, publishedAt)
+                        .putBoolean(KEY_LAST_UPDATE_AVAILABLE, d.update_available && latestVer != null && !latestVer.trim().isEmpty())
                         .apply();
 
                 latestDownloadUrl = downloadUrl;

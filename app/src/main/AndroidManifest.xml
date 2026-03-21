@@ -52,5 +52,9 @@
             </intent-filter>
         </receiver>
 
+        <receiver
+            android:name=".work.UpdateInstallReceiver"
+            android:exported="false" />
+
     </application>
 </manifest>
