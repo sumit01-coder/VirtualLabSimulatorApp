@@ -39,6 +39,7 @@ public final class AppUpdateActivity extends AppCompatActivity {
     public static final String EXTRA_RELEASE_URL = "release_url";
     public static final String EXTRA_NOTES = "notes";
     public static final String EXTRA_PUBLISHED_AT = "published_at";
+    public static final String EXTRA_AUTO_INSTALL = "auto_install";
 
     private static final String APP_UPDATE_PREFS = "vl_app_update";
     private static final String KEY_LAST_LATEST_VERSION = "last_latest_version";
@@ -47,6 +48,7 @@ public final class AppUpdateActivity extends AppCompatActivity {
     private static final String KEY_LAST_NOTES = "last_notes";
     private static final String KEY_LAST_PUBLISHED_AT = "last_published_at";
     private static final String KEY_LAST_DOWNLOAD_ID = "last_download_id";
+    private static final String KEY_DOWNLOADED_APK_URI = "downloaded_apk_uri";
     private static final String STATE_DOWNLOAD_ID = "download_id";
 
     private TextView currentVersionText;
@@ -76,6 +78,7 @@ public final class AppUpdateActivity extends AppCompatActivity {
     private Runnable progressRunnable;
     private boolean hasPromptedInstall = false;
     private @Nullable Uri pendingInstallUri;
+    private boolean autoInstall = false;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -137,6 +140,10 @@ public final class AppUpdateActivity extends AppCompatActivity {
             pendingInstallUri = null;
             installApk(uri);
         }
+        if (autoInstall) {
+            autoInstall = false;
+            maybeInstallCachedApk();
+        }
     }
 
     @Override
@@ -154,6 +161,7 @@ public final class AppUpdateActivity extends AppCompatActivity {
 
     private void loadDataFromIntentOrPrefs() {
         Intent i = getIntent();
+        autoInstall = i != null && i.getBooleanExtra(EXTRA_AUTO_INSTALL, false);
 
         latestVersion = safeStr(i != null ? i.getStringExtra(EXTRA_LATEST_VERSION) : null);
         downloadUrl = safeStr(i != null ? i.getStringExtra(EXTRA_DOWNLOAD_URL) : null);
@@ -173,6 +181,10 @@ public final class AppUpdateActivity extends AppCompatActivity {
         if (releaseUrl.isEmpty()) {
             // Fallback: if server provides only one URL, treat it as release link.
             releaseUrl = downloadUrl;
+        }
+
+        if (autoInstall) {
+            maybeInstallCachedApk();
         }
     }
 
@@ -215,6 +227,19 @@ public final class AppUpdateActivity extends AppCompatActivity {
         } else {
             statusText.setText(canDownloadInApp ? "Ready to download" : "Open GitHub to download");
         }
+    }
+
+    private void maybeInstallCachedApk() {
+        SharedPreferences p = getSharedPreferences(APP_UPDATE_PREFS, Context.MODE_PRIVATE);
+        String uriStr = p.getString(KEY_DOWNLOADED_APK_URI, null);
+        if (uriStr == null || uriStr.trim().isEmpty()) return;
+        Uri uri;
+        try {
+            uri = Uri.parse(uriStr.trim());
+        } catch (Exception ignored) {
+            return;
+        }
+        installApk(uri);
     }
 
     private void onPrimaryAction() {
@@ -301,6 +326,7 @@ public final class AppUpdateActivity extends AppCompatActivity {
         getSharedPreferences(APP_UPDATE_PREFS, Context.MODE_PRIVATE)
                 .edit()
                 .remove(KEY_LAST_DOWNLOAD_ID)
+                .remove(KEY_DOWNLOADED_APK_URI)
                 .apply();
 
         stopDownloadingUi();
@@ -338,10 +364,12 @@ public final class AppUpdateActivity extends AppCompatActivity {
                 downloadBtn.setEnabled(true);
                 downloadBtn.setOnClickListener(v -> installApk(apkUri));
                 detachReceiver();
-                getSharedPreferences(APP_UPDATE_PREFS, Context.MODE_PRIVATE)
-                        .edit()
-                        .remove(KEY_LAST_DOWNLOAD_ID)
-                        .apply();
+                if (apkUri != null) {
+                    getSharedPreferences(APP_UPDATE_PREFS, Context.MODE_PRIVATE)
+                            .edit()
+                            .putString(KEY_DOWNLOADED_APK_URI, apkUri.toString())
+                            .apply();
+                }
                 
                 if (!hasPromptedInstall) {
                     hasPromptedInstall = true;

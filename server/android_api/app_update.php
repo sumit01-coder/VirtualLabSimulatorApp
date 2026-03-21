@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 // android_api/app_update.php
 // Public app update feed (safe to call without auth).
 //
@@ -105,12 +105,27 @@ $currentVersion = normalize_tag(read_str('current_version', '0.0.0'));
 $platform = strtolower(read_str('platform', 'android'));
 $redirect = read_bool('redirect', false);
 $target = strtolower(read_str('target', 'download')); // download|release
+$noCache = read_bool('nocache', false);
+
+$repo = trim($repo);
+$parts = explode('/', $repo, 2);
+if (count($parts) !== 2 || trim($parts[0]) === '' || trim($parts[1]) === '') {
+    json_out(false, 'Invalid repo. Use owner/repo.', [
+        'repo' => $repo,
+        'platform' => $platform,
+        'current_version' => $currentVersion,
+        'latest' => null,
+        'update_available' => false,
+    ], 400);
+}
+$owner = trim($parts[0]);
+$repoName = trim($parts[1]);
 
 $cacheFile = cache_path('github_release_' . preg_replace('/[^a-zA-Z0-9_\\-\\.]/', '_', $repo) . '.json');
 $cacheTtl = 300; // seconds
 
 $cached = null;
-if (is_file($cacheFile)) {
+if (!$noCache && is_file($cacheFile)) {
     $mtime = @filemtime($cacheFile) ?: 0;
     if ($mtime > 0 && (time() - $mtime) < $cacheTtl) {
         $raw = @file_get_contents($cacheFile);
@@ -121,7 +136,10 @@ if (is_file($cacheFile)) {
 
 $release = $cached;
 if (!$release) {
-    $release = http_get_json("https://api.github.com/repos/" . rawurlencode($repo) . "/releases/latest");
+    // IMPORTANT: do not URL-encode the "/" between owner and repo (GitHub expects /repos/{owner}/{repo}).
+    $release = http_get_json(
+        "https://api.github.com/repos/" . rawurlencode($owner) . "/" . rawurlencode($repoName) . "/releases/latest"
+    );
     if (is_array($release)) {
         @mkdir(dirname($cacheFile), 0777, true);
         @file_put_contents($cacheFile, json_encode($release, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
@@ -129,13 +147,13 @@ if (!$release) {
 }
 
 if (!is_array($release) || empty($release['tag_name'])) {
-    json_out(true, 'Release info unavailable', [
+    json_out(false, 'Release info unavailable', [
         'repo' => $repo,
         'platform' => $platform,
         'current_version' => $currentVersion,
         'latest' => null,
         'update_available' => false,
-    ]);
+    ], 503);
 }
 
 $tag = normalize_tag((string)$release['tag_name']);
@@ -154,7 +172,6 @@ if ($redirect) {
     }
 }
 
-
 json_out(true, 'OK', [
     'repo' => $repo,
     'platform' => $platform,
@@ -169,4 +186,3 @@ json_out(true, 'OK', [
     ],
     'update_available' => $updateAvailable,
 ]);
-
