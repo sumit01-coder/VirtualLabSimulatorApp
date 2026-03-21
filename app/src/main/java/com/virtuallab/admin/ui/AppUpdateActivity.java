@@ -20,7 +20,6 @@ import android.view.animation.LinearInterpolator;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
@@ -47,6 +46,8 @@ public final class AppUpdateActivity extends AppCompatActivity {
     private static final String KEY_LAST_RELEASE_URL = "last_release_url";
     private static final String KEY_LAST_NOTES = "last_notes";
     private static final String KEY_LAST_PUBLISHED_AT = "last_published_at";
+    private static final String KEY_LAST_DOWNLOAD_ID = "last_download_id";
+    private static final String STATE_DOWNLOAD_ID = "download_id";
 
     private TextView currentVersionText;
     private TextView latestVersionText;
@@ -74,6 +75,7 @@ public final class AppUpdateActivity extends AppCompatActivity {
     private Handler progressHandler;
     private Runnable progressRunnable;
     private boolean hasPromptedInstall = false;
+    private @Nullable Uri pendingInstallUri;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -105,7 +107,10 @@ public final class AppUpdateActivity extends AppCompatActivity {
         progressHandler = new Handler(Looper.getMainLooper());
 
         if (savedInstanceState != null) {
-            downloadId = savedInstanceState.getLong("download_id", -1L);
+            downloadId = savedInstanceState.getLong(STATE_DOWNLOAD_ID, -1L);
+        } else {
+            SharedPreferences p = getSharedPreferences(APP_UPDATE_PREFS, Context.MODE_PRIVATE);
+            downloadId = p.getLong(KEY_LAST_DOWNLOAD_ID, -1L);
         }
 
         loadDataFromIntentOrPrefs();
@@ -122,9 +127,22 @@ public final class AppUpdateActivity extends AppCompatActivity {
     }
 
     @Override
+    protected void onResume() {
+        super.onResume();
+        if (downloadId > 0) {
+            refreshDownloadState();
+        }
+        if (pendingInstallUri != null && canInstallPackages()) {
+            Uri uri = pendingInstallUri;
+            pendingInstallUri = null;
+            installApk(uri);
+        }
+    }
+
+    @Override
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
-        outState.putLong("download_id", downloadId);
+        outState.putLong(STATE_DOWNLOAD_ID, downloadId);
     }
 
     @Override
@@ -180,6 +198,7 @@ public final class AppUpdateActivity extends AppCompatActivity {
             notesText.setText("No release notes.");
         }
 
+        boolean updateAvailable = isUpdateAvailable(BuildConfig.VERSION_NAME, latestVersion);
         boolean canDownloadInApp = looksLikeApk(downloadUrl);
         downloadBtn.setVisibility(canDownloadInApp ? View.VISIBLE : View.GONE);
 
@@ -187,10 +206,23 @@ public final class AppUpdateActivity extends AppCompatActivity {
             openGithubBtn.setEnabled(false);
         }
 
-        statusText.setText(canDownloadInApp ? "Ready to download" : "Open GitHub to download");
+        if (!updateAvailable && !latestVersion.isEmpty()) {
+            statusText.setText("Up to date");
+            if (downloadId <= 0) {
+                downloadBtn.setEnabled(false);
+                downloadBtn.setVisibility(View.GONE);
+            }
+        } else {
+            statusText.setText(canDownloadInApp ? "Ready to download" : "Open GitHub to download");
+        }
     }
 
     private void onPrimaryAction() {
+        if (!isUpdateAvailable(BuildConfig.VERSION_NAME, latestVersion)) {
+            openLink(bestReleaseLink());
+            return;
+        }
+
         if (!looksLikeApk(downloadUrl)) {
             openLink(bestReleaseLink());
             return;
@@ -207,6 +239,10 @@ public final class AppUpdateActivity extends AppCompatActivity {
     private void startDownload(String url) {
         if (url == null || url.trim().isEmpty()) {
             toast("No download URL");
+            return;
+        }
+        if (!looksLikeApk(url)) {
+            openLink(bestReleaseLink());
             return;
         }
 
@@ -238,6 +274,10 @@ public final class AppUpdateActivity extends AppCompatActivity {
         try {
             downloadId = dm.enqueue(req);
             hasPromptedInstall = false;
+            getSharedPreferences(APP_UPDATE_PREFS, Context.MODE_PRIVATE)
+                    .edit()
+                    .putLong(KEY_LAST_DOWNLOAD_ID, downloadId)
+                    .apply();
         } catch (Exception e) {
             downloadId = -1L;
             toast("Download failed to start");
@@ -247,6 +287,27 @@ public final class AppUpdateActivity extends AppCompatActivity {
         statusText.setText("Downloading...");
         startDownloadingUi();
         maybeAttachReceiver();
+    }
+
+    private void cancelDownload() {
+        if (downloadId <= 0) return;
+        DownloadManager dm = (DownloadManager) getSystemService(DOWNLOAD_SERVICE);
+        if (dm == null) return;
+        try {
+            dm.remove(downloadId);
+        } catch (Exception ignored) {
+        }
+        downloadId = -1L;
+        getSharedPreferences(APP_UPDATE_PREFS, Context.MODE_PRIVATE)
+                .edit()
+                .remove(KEY_LAST_DOWNLOAD_ID)
+                .apply();
+
+        stopDownloadingUi();
+        detachReceiver();
+        downloadBtn.setText("Download & install");
+        downloadBtn.setOnClickListener(v -> onPrimaryAction());
+        statusText.setText("Download canceled");
     }
 
     private void refreshDownloadState() {
@@ -262,7 +323,10 @@ public final class AppUpdateActivity extends AppCompatActivity {
             int status = c.getInt(c.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS));
             if (status == DownloadManager.STATUS_RUNNING || status == DownloadManager.STATUS_PENDING || status == DownloadManager.STATUS_PAUSED) {
                 if (progress.getVisibility() != View.VISIBLE) startDownloadingUi();
-                statusText.setText("Downloading...");
+                String msg = "Downloading...";
+                if (status == DownloadManager.STATUS_PENDING) msg = "Download pending...";
+                if (status == DownloadManager.STATUS_PAUSED) msg = "Download paused...";
+                statusText.setText(msg);
                 return;
             }
 
@@ -274,6 +338,10 @@ public final class AppUpdateActivity extends AppCompatActivity {
                 downloadBtn.setEnabled(true);
                 downloadBtn.setOnClickListener(v -> installApk(apkUri));
                 detachReceiver();
+                getSharedPreferences(APP_UPDATE_PREFS, Context.MODE_PRIVATE)
+                        .edit()
+                        .remove(KEY_LAST_DOWNLOAD_ID)
+                        .apply();
                 
                 if (!hasPromptedInstall) {
                     hasPromptedInstall = true;
@@ -283,9 +351,22 @@ public final class AppUpdateActivity extends AppCompatActivity {
             }
 
             stopDownloadingUi();
-            statusText.setText("Download failed.");
+            int reason = 0;
+            try {
+                reason = c.getInt(c.getColumnIndexOrThrow(DownloadManager.COLUMN_REASON));
+            } catch (Exception ignored) {
+            }
+            statusText.setText("Download failed" + (reason != 0 ? (": " + reasonToText(reason)) : "."));
             downloadId = -1L;
+            getSharedPreferences(APP_UPDATE_PREFS, Context.MODE_PRIVATE)
+                    .edit()
+                    .remove(KEY_LAST_DOWNLOAD_ID)
+                    .apply();
             detachReceiver();
+
+            downloadBtn.setEnabled(true);
+            downloadBtn.setText("Retry download");
+            downloadBtn.setOnClickListener(v -> startDownload(downloadUrl));
         } catch (Exception ignored) {
         }
     }
@@ -296,21 +377,21 @@ public final class AppUpdateActivity extends AppCompatActivity {
             return;
         }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            if (!getPackageManager().canRequestPackageInstalls()) {
-                toast("Allow 'Install unknown apps' for this app");
-                try {
-                    Intent i = new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:" + getPackageName()));
-                    startActivity(i);
-                } catch (Exception ignored) {
-                }
-                return;
+        if (!canInstallPackages()) {
+            pendingInstallUri = apkUri;
+            toast("Allow 'Install unknown apps' for this app");
+            try {
+                Intent i = new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:" + getPackageName()));
+                startActivity(i);
+            } catch (Exception ignored) {
             }
+            return;
         }
 
         try {
-            Intent install = new Intent(Intent.ACTION_VIEW);
-            install.setDataAndType(apkUri, "application/vnd.android.package-archive");
+            Intent install = new Intent(Intent.ACTION_INSTALL_PACKAGE);
+            install.setData(apkUri);
+            install.putExtra(Intent.EXTRA_NOT_UNKNOWN_SOURCE, true);
             install.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
             install.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             startActivity(install);
@@ -356,7 +437,9 @@ public final class AppUpdateActivity extends AppCompatActivity {
         progressText.setVisibility(View.VISIBLE);
         progress.setIndeterminate(false);
         progress.setProgressCompat(0, true);
-        downloadBtn.setEnabled(false);
+        downloadBtn.setEnabled(true);
+        downloadBtn.setText("Cancel download");
+        downloadBtn.setOnClickListener(v -> cancelDownload());
 
         if (downloadAnim == null) {
             PropertyValuesHolder moveY = PropertyValuesHolder.ofFloat(View.TRANSLATION_Y, -15f, 15f);
@@ -445,7 +528,23 @@ public final class AppUpdateActivity extends AppCompatActivity {
 
     private boolean looksLikeApk(String url) {
         if (url == null || url.trim().isEmpty()) return false;
-        return true; 
+        Uri u;
+        try {
+            u = Uri.parse(url.trim());
+        } catch (Exception e) {
+            return false;
+        }
+
+        String scheme = u.getScheme();
+        if (scheme == null) return false;
+        scheme = scheme.toLowerCase();
+        if (!"http".equals(scheme) && !"https".equals(scheme)) return false;
+
+        String path = u.getPath();
+        if (path != null && path.toLowerCase().endsWith(".apk")) return true;
+
+        String last = u.getLastPathSegment();
+        return last != null && last.toLowerCase().contains(".apk");
     }
 
     private void toast(String msg) {
@@ -454,5 +553,65 @@ public final class AppUpdateActivity extends AppCompatActivity {
 
     private String safeStr(String s) {
         return s == null ? "" : s.trim();
+    }
+
+    private boolean canInstallPackages() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return true;
+        try {
+            return getPackageManager().canRequestPackageInstalls();
+        } catch (Exception ignored) {
+            return false;
+        }
+    }
+
+    private boolean isUpdateAvailable(String current, String latest) {
+        if (latest == null || latest.trim().isEmpty()) return false;
+        if (current == null || current.trim().isEmpty()) return true;
+        return compareVersions(latest.trim(), current.trim()) > 0;
+    }
+
+    private int compareVersions(String a, String b) {
+        String[] as = a.replaceFirst("^[vV]", "").split("[^0-9]+");
+        String[] bs = b.replaceFirst("^[vV]", "").split("[^0-9]+");
+        int n = Math.max(as.length, bs.length);
+        for (int i = 0; i < n; i++) {
+            int av = i < as.length ? parseIntSafe(as[i]) : 0;
+            int bv = i < bs.length ? parseIntSafe(bs[i]) : 0;
+            if (av != bv) return Integer.compare(av, bv);
+        }
+        return 0;
+    }
+
+    private int parseIntSafe(String s) {
+        if (s == null) return 0;
+        try {
+            return Integer.parseInt(s);
+        } catch (Exception ignored) {
+            return 0;
+        }
+    }
+
+    private String reasonToText(int reason) {
+        switch (reason) {
+            case DownloadManager.ERROR_CANNOT_RESUME:
+                return "cannot resume";
+            case DownloadManager.ERROR_DEVICE_NOT_FOUND:
+                return "device not found";
+            case DownloadManager.ERROR_FILE_ALREADY_EXISTS:
+                return "file already exists";
+            case DownloadManager.ERROR_FILE_ERROR:
+                return "file error";
+            case DownloadManager.ERROR_HTTP_DATA_ERROR:
+                return "network data error";
+            case DownloadManager.ERROR_INSUFFICIENT_SPACE:
+                return "insufficient space";
+            case DownloadManager.ERROR_TOO_MANY_REDIRECTS:
+                return "too many redirects";
+            case DownloadManager.ERROR_UNHANDLED_HTTP_CODE:
+                return "unhandled HTTP code";
+            case DownloadManager.ERROR_UNKNOWN:
+            default:
+                return "unknown error";
+        }
     }
 }

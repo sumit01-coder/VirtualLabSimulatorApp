@@ -51,7 +51,9 @@ function read_bool(string $key, bool $default = false): bool
 
 function cache_path(string $name): string
 {
-    return dirname(__DIR__, 3) . '/cache/' . $name;
+    // Default: create/use a sibling `cache/` next to `android_api/` (i.e. `<public_html>/cache/`).
+    // This is usually writable and avoids depending on deep directory layouts.
+    return dirname(__DIR__) . '/cache/' . $name;
 }
 
 function http_get_json(string $url, int $timeoutSeconds = 8): ?array
@@ -90,7 +92,8 @@ function find_apk_url(array $release): ?string
         $name = strtolower((string)($a['name'] ?? ''));
         $url = (string)($a['browser_download_url'] ?? '');
         if ($url === '') continue;
-        if (str_ends_with($name, '.apk') || str_contains($name, 'apk')) {
+        $contentType = strtolower((string)($a['content_type'] ?? ''));
+        if (str_ends_with($name, '.apk') || $contentType === 'application/vnd.android.package-archive') {
             return $url;
         }
     }
