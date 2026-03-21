@@ -462,9 +462,21 @@ public final class AppUpdateActivity extends AppCompatActivity {
             return;
         }
 
-        boolean started = ApkInstaller.installFromUri(this, apkUri, getPackageName());
-        if (!started) {
-            toast("Install failed to start");
+        ApkInstaller.Result r = ApkInstaller.installFromUri(this, apkUri, getPackageName());
+        if (r.started) return;
+
+        toast("Install failed: " + (r.error != null ? r.error : "unknown"));
+
+        // Fallback: ask the system installer directly (some ROMs/devices may block session installs).
+        try {
+            Intent install = new Intent(Intent.ACTION_INSTALL_PACKAGE);
+            install.setData(apkUri);
+            install.putExtra(Intent.EXTRA_NOT_UNKNOWN_SOURCE, true);
+            install.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            install.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(install);
+        } catch (Exception ignored) {
+            toast("Cannot open installer");
         }
     }
 

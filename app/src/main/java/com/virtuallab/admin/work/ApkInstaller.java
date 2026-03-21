@@ -19,20 +19,38 @@ import java.io.OutputStream;
 public final class ApkInstaller {
     private ApkInstaller() {}
 
-    public static boolean installFromUri(Context context, Uri apkUri, @Nullable String expectedPackageName) {
-        if (context == null || apkUri == null) return false;
+    public static final class Result {
+        public final boolean started;
+        public final @Nullable String error;
+
+        private Result(boolean started, @Nullable String error) {
+            this.started = started;
+            this.error = error;
+        }
+
+        public static Result ok() {
+            return new Result(true, null);
+        }
+
+        public static Result fail(String error) {
+            return new Result(false, error);
+        }
+    }
+
+    public static Result installFromUri(Context context, Uri apkUri, @Nullable String expectedPackageName) {
+        if (context == null || apkUri == null) return Result.fail("Missing APK");
 
         // Copy to private cache first (DownloadManager Uris can become invalid; this keeps a stable local file).
         File cacheApk = new File(context.getCacheDir(), "vl_update.apk");
         if (!copyToFile(context.getContentResolver(), apkUri, cacheApk)) {
-            return false;
+            return Result.fail("Cannot read downloaded APK");
         }
 
         return installFromFile(context, cacheApk, expectedPackageName);
     }
 
-    private static boolean installFromFile(Context context, File apkFile, @Nullable String expectedPackageName) {
-        if (!apkFile.exists() || apkFile.length() <= 0) return false;
+    private static Result installFromFile(Context context, File apkFile, @Nullable String expectedPackageName) {
+        if (!apkFile.exists() || apkFile.length() <= 0) return Result.fail("Downloaded APK is empty");
 
         try {
             PackageInstaller installer = context.getPackageManager().getPackageInstaller();
@@ -63,9 +81,11 @@ public final class ApkInstaller {
 
             session.commit(sender);
             session.close();
-            return true;
+            return Result.ok();
         } catch (Exception ignored) {
-            return false;
+            String msg = ignored.getMessage();
+            if (msg == null || msg.trim().isEmpty()) msg = ignored.getClass().getSimpleName();
+            return Result.fail(msg);
         }
     }
 
