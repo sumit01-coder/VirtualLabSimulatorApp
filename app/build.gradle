@@ -10,6 +10,22 @@ android {
         buildConfig true
     }
 
+    def keystorePath = System.getenv("ANDROID_KEYSTORE_PATH")
+    def keystorePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD")
+    def keyAlias = System.getenv("ANDROID_KEY_ALIAS")
+    def keyPassword = System.getenv("ANDROID_KEY_PASSWORD")
+
+    if (keystorePath && keystorePassword && keyAlias && keyPassword) {
+        signingConfigs {
+            release {
+                storeFile file(keystorePath)
+                storePassword keystorePassword
+                keyAlias keyAlias
+                keyPassword keyPassword
+            }
+        }
+    }
+
     defaultConfig {
         applicationId "com.virtuallab.admin"
         minSdk 24
@@ -22,6 +38,9 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            if (signingConfigs.findByName("release") != null) {
+                signingConfig signingConfigs.release
+            }
         }
     }
     compileOptions {
