@@ -3,7 +3,7 @@ plugins {
 }
 
 android {
-    namespace 'com.sumit.virtuallabadmin.v28'
+    namespace 'com.sumit.virtuallabadmin.v29'
     compileSdk 35
 
     buildFeatures {
@@ -28,11 +28,11 @@ android {
     }
 
     defaultConfig {
-        applicationId "com.sumit.virtuallabadmin.v28"
+        applicationId "com.sumit.virtuallabadmin.v29"
         minSdk 24
         targetSdk 35
-        versionCode 28
-        versionName "2.8"
+        versionCode 29
+        versionName "2.9"
     }
 
     buildTypes {
