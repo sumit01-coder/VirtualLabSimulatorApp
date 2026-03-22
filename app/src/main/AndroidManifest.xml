@@ -7,7 +7,7 @@
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 
     <application
-        android:name=".AdminApp"
+        android:name="com.virtuallab.admin.AdminApp"
         android:allowBackup="true"
         android:enableOnBackInvokedCallback="true"
         android:icon="@mipmap/ic_launcher"
@@ -17,7 +17,7 @@
         android:theme="@style/Theme.VirtualLabAdmin">
 
         <activity
-            android:name=".ui.LoginActivity"
+            android:name="com.virtuallab.admin.ui.LoginActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -26,35 +26,35 @@
         </activity>
 
         <activity
-            android:name=".ui.MainActivity"
+            android:name="com.virtuallab.admin.ui.MainActivity"
             android:exported="false"
             android:launchMode="singleTop" />
 
         <activity
-            android:name=".ui.AppLockActivity"
+            android:name="com.virtuallab.admin.ui.AppLockActivity"
             android:exported="false"
             android:excludeFromRecents="true"
             android:finishOnTaskLaunch="true" />
 
         <activity
-            android:name=".ui.LabsActivity"
+            android:name="com.virtuallab.admin.ui.LabsActivity"
             android:exported="false" />
 
         <activity
-            android:name=".ui.UsersActivity"
+            android:name="com.virtuallab.admin.ui.UsersActivity"
             android:exported="false" />
 
         <activity
-            android:name=".ui.DepartmentsActivity"
+            android:name="com.virtuallab.admin.ui.DepartmentsActivity"
             android:exported="false" />
 
 
         <activity
-            android:name=".ui.AppUpdateActivity"
+            android:name="com.virtuallab.admin.ui.AppUpdateActivity"
             android:exported="false" />
 
         <receiver
-            android:name=".work.UpdateDownloadReceiver"
+            android:name="com.virtuallab.admin.work.UpdateDownloadReceiver"
             android:exported="false">
             <intent-filter>
                 <action android:name="android.intent.action.DOWNLOAD_COMPLETE" />
@@ -62,7 +62,7 @@
         </receiver>
 
         <receiver
-            android:name=".work.UpdateInstallReceiver"
+            android:name="com.virtuallab.admin.work.UpdateInstallReceiver"
             android:exported="false" />
 
     </application>
