@@ -1,9 +1,11 @@
 package com.virtuallab.admin.ui.fragments;
 
+import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -25,15 +27,24 @@ import com.virtuallab.admin.model.ApiResponse;
 import com.virtuallab.admin.model.AppUpdateData;
 import com.virtuallab.admin.model.SettingsData;
 import com.virtuallab.admin.model.SettingsUpdateRequest;
+import com.virtuallab.admin.notifications.NotificationHelper;
+import com.virtuallab.admin.security.AppLockPrefs;
+import com.virtuallab.admin.security.AppLockSupport;
 import com.virtuallab.admin.ui.LabsActivity;
 import com.virtuallab.admin.ui.DepartmentsActivity;
 import com.virtuallab.admin.ui.AppUpdateActivity;
+import com.virtuallab.admin.ui.MainActivity;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
 public final class SettingsFragment extends BaseAuthedFragment {
+    private static final int NOTIFICATION_ID_SETTINGS = 1201;
+
     private static final String APP_UPDATE_PREFS = "vl_app_update";
     private static final String KEY_AUTO_CHECK = "auto_check";
     private static final String KEY_LAST_CHECKED_AT = "last_checked_at";
@@ -50,6 +61,7 @@ public final class SettingsFragment extends BaseAuthedFragment {
     private TextView accessHint;
     private SwitchMaterial maintenanceSwitch;
     private SwitchMaterial admin2faSwitch;
+    private SwitchMaterial appLockSwitch;
     private MaterialButton saveBtn;
     private MaterialButton manageLabsBtn;
     private MaterialButton manageDepartmentsBtn;
@@ -66,6 +78,9 @@ public final class SettingsFragment extends BaseAuthedFragment {
     private String latestPublishedAt;
     private String latestVersion;
 
+    private Boolean lastKnownMaintenanceMode = null;
+    private Boolean lastKnownAdminEmail2fa = null;
+
     private boolean binding = false;
     private Call<ApiResponse<SettingsData>> loadCall;
     private Call<ApiResponse<SettingsData>> saveCall;
@@ -81,6 +96,7 @@ public final class SettingsFragment extends BaseAuthedFragment {
         accessHint = v.findViewById(R.id.accessHint);
         maintenanceSwitch = v.findViewById(R.id.maintenanceSwitch);
         admin2faSwitch = v.findViewById(R.id.admin2faSwitch);
+        appLockSwitch = v.findViewById(R.id.appLockSwitch);
         saveBtn = v.findViewById(R.id.saveBtn);
         manageLabsBtn = v.findViewById(R.id.manageLabsBtn);
         manageDepartmentsBtn = v.findViewById(R.id.manageDepartmentsBtn);
@@ -105,6 +121,26 @@ public final class SettingsFragment extends BaseAuthedFragment {
         boolean canEdit = "super_admin".equalsIgnoreCase(store.getRole());
         accessHint.setText(canEdit ? "System settings (super_admin)" : "Access denied: super_admin only");
         setEnabled(canEdit);
+
+        if (appLockSwitch != null) {
+            appLockSwitch.setChecked(AppLockPrefs.isEnabled(requireContext()));
+            appLockSwitch.setOnCheckedChangeListener((btn, isChecked) -> {
+                if (!isAdded()) return;
+                if (binding) return;
+                if (isChecked && !AppLockSupport.canUseDeviceUnlock(requireContext())) {
+                    binding = true;
+                    appLockSwitch.setChecked(false);
+                    binding = false;
+                    Toast.makeText(requireContext(), "Enable screen lock / biometrics on your phone first", Toast.LENGTH_LONG).show();
+                    return;
+                }
+                AppLockPrefs.setEnabled(requireContext(), isChecked);
+                if (isChecked) AppLockPrefs.markUnlockedNow(requireContext());
+                String msg = isChecked ? "App lock enabled" : "App lock disabled";
+                Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show();
+                NotificationHelper.notify(requireContext(), 1203, "App security", msg);
+            });
+        }
 
         swipe.setOnRefreshListener(this::load);
         saveBtn.setOnClickListener(vv -> save());
@@ -244,6 +280,7 @@ public final class SettingsFragment extends BaseAuthedFragment {
         maintenanceSwitch.setEnabled(enabled);
         admin2faSwitch.setEnabled(enabled);
         saveBtn.setEnabled(enabled);
+        if (appLockSwitch != null) appLockSwitch.setEnabled(true);
     }
 
     private void setLoading(boolean loading) {
@@ -252,6 +289,7 @@ public final class SettingsFragment extends BaseAuthedFragment {
         saveBtn.setEnabled(false);
         maintenanceSwitch.setEnabled(false);
         admin2faSwitch.setEnabled(false);
+        if (appLockSwitch != null) appLockSwitch.setEnabled(false);
     }
 
     private void load() {
@@ -285,9 +323,14 @@ public final class SettingsFragment extends BaseAuthedFragment {
                 }
 
                 binding = true;
-                maintenanceSwitch.setChecked(response.body().data.maintenance_mode);
-                admin2faSwitch.setChecked(response.body().data.admin_email_2fa);
+                boolean mm = response.body().data.maintenance_mode;
+                boolean mfa = response.body().data.admin_email_2fa;
+                maintenanceSwitch.setChecked(mm);
+                admin2faSwitch.setChecked(mfa);
                 binding = false;
+
+                lastKnownMaintenanceMode = response.body().data.maintenance_mode;
+                lastKnownAdminEmail2fa = response.body().data.admin_email_2fa;
 
                 setEnabled("super_admin".equalsIgnoreCase(store.getRole()));
             }
@@ -305,11 +348,25 @@ public final class SettingsFragment extends BaseAuthedFragment {
 
     private void save() {
         if (binding) return;
+
+        boolean desiredMaintenance = maintenanceSwitch.isChecked();
+        boolean desired2fa = admin2faSwitch.isChecked();
+        if (lastKnownMaintenanceMode != null && lastKnownAdminEmail2fa != null) {
+            if (desiredMaintenance == lastKnownMaintenanceMode && desired2fa == lastKnownAdminEmail2fa) {
+                Context ctx = getContext();
+                if (ctx != null) Toast.makeText(ctx, "No changes to save", Toast.LENGTH_SHORT).show();
+                return;
+            }
+        }
+
+        final Boolean prevMaintenance = lastKnownMaintenanceMode;
+        final Boolean prev2fa = lastKnownAdminEmail2fa;
+
         setLoading(true);
         if (saveCall != null) saveCall.cancel();
         saveCall = api.updateSettings(new SettingsUpdateRequest(
-                maintenanceSwitch.isChecked(),
-                admin2faSwitch.isChecked()
+                desiredMaintenance,
+                desired2fa
         ));
         saveCall.enqueue(new Callback<ApiResponse<SettingsData>>() {
             @Override
@@ -332,11 +389,36 @@ public final class SettingsFragment extends BaseAuthedFragment {
                 if (!response.isSuccessful() || response.body() == null || !response.body().status) {
                     Context ctx = getContext();
                     if (ctx != null) Toast.makeText(ctx, "Failed to save settings", Toast.LENGTH_SHORT).show();
+                    restoreLastKnownSettings();
                     setEnabled("super_admin".equalsIgnoreCase(store.getRole()));
                     return;
                 }
+
+                SettingsData d = response.body().data;
+                boolean newMaintenance = (d != null) ? d.maintenance_mode : desiredMaintenance;
+                boolean new2fa = (d != null) ? d.admin_email_2fa : desired2fa;
+
+                binding = true;
+                maintenanceSwitch.setChecked(newMaintenance);
+                admin2faSwitch.setChecked(new2fa);
+                binding = false;
+
+                lastKnownMaintenanceMode = newMaintenance;
+                lastKnownAdminEmail2fa = new2fa;
+
                 Context ctx = getContext();
-                if (ctx != null) Toast.makeText(ctx, "Settings updated", Toast.LENGTH_SHORT).show();
+                if (ctx != null) {
+                    String msg = buildSettingsSavedMessage(prevMaintenance, prev2fa, newMaintenance, new2fa);
+                    Toast.makeText(ctx, msg, Toast.LENGTH_SHORT).show();
+                    Intent ui = new Intent(ctx, MainActivity.class);
+                    ui.putExtra(MainActivity.EXTRA_START_TAB, MainActivity.TAB_SETTINGS);
+                    int piFlags = PendingIntent.FLAG_UPDATE_CURRENT;
+                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+                        piFlags |= PendingIntent.FLAG_IMMUTABLE;
+                    }
+                    PendingIntent pi = PendingIntent.getActivity(ctx, NOTIFICATION_ID_SETTINGS, ui, piFlags);
+                    NotificationHelper.notify(ctx, NOTIFICATION_ID_SETTINGS, "System settings", msg, pi);
+                }
                 setEnabled("super_admin".equalsIgnoreCase(store.getRole()));
             }
 
@@ -346,9 +428,36 @@ public final class SettingsFragment extends BaseAuthedFragment {
                 swipe.setRefreshing(false);
                 Context ctx = getContext();
                 if (ctx != null) Toast.makeText(ctx, "Network error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                restoreLastKnownSettings();
                 setEnabled("super_admin".equalsIgnoreCase(store.getRole()));
             }
         });
+    }
+
+    private void restoreLastKnownSettings() {
+        if (maintenanceSwitch == null || admin2faSwitch == null) return;
+        if (lastKnownMaintenanceMode == null || lastKnownAdminEmail2fa == null) return;
+        binding = true;
+        maintenanceSwitch.setChecked(lastKnownMaintenanceMode);
+        admin2faSwitch.setChecked(lastKnownAdminEmail2fa);
+        binding = false;
+    }
+
+    private static String buildSettingsSavedMessage(@Nullable Boolean prevMaintenance,
+                                                   @Nullable Boolean prev2fa,
+                                                   boolean newMaintenance,
+                                                   boolean new2fa) {
+        List<String> parts = new ArrayList<>(2);
+        if (prevMaintenance != null && prevMaintenance != newMaintenance) {
+            parts.add("Maintenance mode " + (newMaintenance ? "enabled" : "disabled"));
+        }
+        if (prev2fa != null && prev2fa != new2fa) {
+            parts.add("Email 2FA " + (new2fa ? "enabled" : "disabled"));
+        }
+        if (!parts.isEmpty()) {
+            return TextUtils.join(" · ", parts);
+        }
+        return "Settings saved. Maintenance: " + (newMaintenance ? "ON" : "OFF") + ", Email 2FA: " + (new2fa ? "ON" : "OFF");
     }
 
     @Override
@@ -360,6 +469,7 @@ public final class SettingsFragment extends BaseAuthedFragment {
         accessHint = null;
         maintenanceSwitch = null;
         admin2faSwitch = null;
+        appLockSwitch = null;
         saveBtn = null;
         manageLabsBtn = null;
         manageDepartmentsBtn = null;

@@ -25,6 +25,7 @@ import com.virtuallab.admin.model.ApiResponse;
 import com.virtuallab.admin.model.LoginRequest;
 import com.virtuallab.admin.model.LoginResponseData;
 import com.virtuallab.admin.model.VerifyOtpRequest;
+import com.virtuallab.admin.security.AppLockPrefs;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -277,6 +278,7 @@ public final class LoginActivity extends AppCompatActivity {
         String email = data.admin != null ? data.admin.email : "";
         String role = data.admin != null ? data.admin.role : "";
         tokenStore.saveSession(data.token, uName, email, role);
+        AppLockPrefs.markUnlockedNow(this);
 
         startActivity(new Intent(LoginActivity.this, MainActivity.class));
         finish();

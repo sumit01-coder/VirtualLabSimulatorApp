@@ -16,9 +16,16 @@ import com.virtuallab.admin.api.ApiService;
 import com.virtuallab.admin.data.TokenStore;
 import com.virtuallab.admin.model.ApiResponse;
 import com.virtuallab.admin.model.AppUpdateData;
+import com.virtuallab.admin.model.DdosBlockedIp;
 import com.virtuallab.admin.model.UpdatesData;
 import com.virtuallab.admin.notifications.NotificationHelper;
 import com.virtuallab.admin.ui.AppUpdateActivity;
+import com.virtuallab.admin.ui.MainActivity;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 import retrofit2.Response;
 
@@ -27,6 +34,7 @@ public final class UpdatesWorker extends Worker {
     private static final String KEY_LAST_TICKET_ID = "last_ticket_id";
     private static final String KEY_LAST_PRACTICAL_ID = "last_practical_id";
     private static final String KEY_LAST_MAINTENANCE = "last_maintenance";
+    private static final String KEY_LAST_BLOCKED_IPS = "last_blocked_ips";
 
     private static final String APP_UPDATE_PREFS = "vl_app_update";
     private static final String KEY_AUTO_CHECK = "auto_check";
@@ -89,10 +97,15 @@ public final class UpdatesWorker extends Worker {
                 }
 
                 if (lastMaintenance == 0 && maintenanceMode) {
-                    NotificationHelper.notify(context, 1003, "Maintenance mode", "Maintenance mode is now ON.");
+                    PendingIntent pi = buildMainIntent(context, MainActivity.TAB_SETTINGS, null, 1003);
+                    NotificationHelper.notify(context, 1003, "Maintenance mode", "Maintenance mode is now ON.", pi);
                     lastMaintenance = 1;
-                } else if (!maintenanceMode) {
+                } else if (lastMaintenance == 1 && !maintenanceMode) {
+                    PendingIntent pi = buildMainIntent(context, MainActivity.TAB_SETTINGS, null, 1003);
+                    NotificationHelper.notify(context, 1003, "Maintenance mode", "Maintenance mode is now OFF.", pi);
                     lastMaintenance = 0;
+                } else {
+                    lastMaintenance = maintenanceMode ? 1 : 0;
                 }
             }
 
@@ -101,6 +114,52 @@ public final class UpdatesWorker extends Worker {
                     .putInt(KEY_LAST_PRACTICAL_ID, lastPracticalId)
                     .putInt(KEY_LAST_MAINTENANCE, lastMaintenance)
                     .apply();
+
+            // DDoS block notifications (optional; requires ddos.php on server)
+            try {
+                Response<ApiResponse<List<DdosBlockedIp>>> br = api.ddosBlocked("blocked").execute();
+                if (br.isSuccessful() && br.body() != null && br.body().status) {
+                    List<DdosBlockedIp> rows = br.body().data;
+                    Set<String> current = new HashSet<>();
+                    if (rows != null) {
+                        for (DdosBlockedIp row : rows) {
+                            if (row == null || row.ip == null) continue;
+                            String ip = row.ip.trim();
+                            if (!ip.isEmpty()) current.add(ip);
+                        }
+                    }
+
+                    Set<String> prev = new HashSet<>();
+                    try {
+                        Set<String> stored = prefs.getStringSet(KEY_LAST_BLOCKED_IPS, null);
+                        if (stored != null) prev.addAll(stored);
+                    } catch (Exception ignored) {}
+
+                    // First run: seed only, don't spam.
+                    if (prev.isEmpty() && !current.isEmpty()) {
+                        prefs.edit().putStringSet(KEY_LAST_BLOCKED_IPS, current).apply();
+                    } else {
+                        List<String> newlyBlocked = new ArrayList<>();
+                        for (String ip : current) {
+                            if (!prev.contains(ip)) newlyBlocked.add(ip);
+                        }
+
+                        if (!newlyBlocked.isEmpty()) {
+                            String first = newlyBlocked.get(0);
+                            String text = "Blocked IP: " + first;
+                            if (newlyBlocked.size() > 1) {
+                                text += " (+" + (newlyBlocked.size() - 1) + " more)";
+                            }
+                            PendingIntent pi = buildMainIntent(context, MainActivity.TAB_DDOS, first, 1202);
+                            NotificationHelper.notify(context, 1202, "DDoS Monitor", text, pi);
+                        }
+
+                        prefs.edit().putStringSet(KEY_LAST_BLOCKED_IPS, current).apply();
+                    }
+                }
+            } catch (Exception ignored) {
+                // Don't fail the worker if ddos.php isn't present or is protected.
+            }
 
             // App update check (optional)
             SharedPreferences appPrefs = context.getSharedPreferences(APP_UPDATE_PREFS, Context.MODE_PRIVATE);
@@ -162,5 +221,20 @@ public final class UpdatesWorker extends Worker {
         } catch (Exception e) {
             return Result.retry();
         }
+    }
+
+    private static PendingIntent buildMainIntent(Context context, String tab, String ddosIp, int requestCode) {
+        Intent ui = new Intent(context, MainActivity.class);
+        ui.putExtra(MainActivity.EXTRA_START_TAB, tab);
+        if (ddosIp != null && !ddosIp.trim().isEmpty()) {
+            ui.putExtra(MainActivity.EXTRA_DDOS_IP, ddosIp.trim());
+        }
+        ui.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+
+        int flags = PendingIntent.FLAG_UPDATE_CURRENT;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            flags |= PendingIntent.FLAG_IMMUTABLE;
+        }
+        return PendingIntent.getActivity(context, requestCode, ui, flags);
     }
 }

@@ -38,9 +38,20 @@ import android.os.Build;
 import java.util.concurrent.TimeUnit;
 
 public final class MainActivity extends AppCompatActivity {
+    public static final String EXTRA_START_TAB = "vl_extra_start_tab";
+    public static final String EXTRA_DDOS_IP = "vl_extra_ddos_ip";
+    public static final String TAB_DASHBOARD = "dashboard";
+    public static final String TAB_TICKETS = "tickets";
+    public static final String TAB_PRACTICALS = "practicals";
+    public static final String TAB_DDOS = "ddos";
+    public static final String TAB_SETTINGS = "settings";
+
     private BottomNavigationView bottomNav;
     private static final String UPDATES_WORK_NAME = "vl_admin_updates";
     private static final int REQ_NOTIF = 501;
+
+    private String pendingDdosIp = null;
+    private String initialTab = TAB_DASHBOARD;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -67,6 +78,8 @@ public final class MainActivity extends AppCompatActivity {
 
         bottomNav = findViewById(R.id.bottomNav);
 
+        readIntentForNavigation(getIntent());
+
         toolbar.setOnMenuItemClickListener(item -> {
             int id = item.getItemId();
             if (id == R.id.action_settings) {
@@ -87,18 +100,62 @@ public final class MainActivity extends AppCompatActivity {
             if (id == R.id.nav_dashboard) f = new DashboardFragment();
             else if (id == R.id.nav_tickets) f = new TicketsFragment();
             else if (id == R.id.nav_practicals) f = new PracticalsFragment();
-            else f = new DdosFragment();
+            else f = DdosFragment.newInstance(pendingDdosIp);
 
             showFragment(f, true);
+            // Consume the pending deep-link IP (so normal navigation doesn't keep forcing it).
+            pendingDdosIp = null;
             return true;
         });
 
         if (savedInstanceState == null) {
-            bottomNav.setSelectedItemId(R.id.nav_dashboard);
+            bottomNav.setSelectedItemId(tabToNavId(initialTab));
+            // Ensure we don't keep applying initial tab after first render.
+            initialTab = TAB_DASHBOARD;
         }
 
         ensureNotificationPermission();
         scheduleUpdatesWorker();
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        readIntentForNavigation(intent);
+
+        if (bottomNav == null) return;
+        int navId = tabToNavId(initialTab);
+        if (navId == bottomNav.getSelectedItemId()) {
+            // Selected tab already visible; force refresh with deep-link args.
+            if (navId == R.id.nav_settings) showFragment(new SettingsFragment(), true);
+            else if (navId == R.id.nav_ddos) showFragment(DdosFragment.newInstance(pendingDdosIp), true);
+        } else {
+            bottomNav.setSelectedItemId(navId);
+        }
+        initialTab = TAB_DASHBOARD;
+    }
+
+    private void readIntentForNavigation(Intent intent) {
+        if (intent == null) return;
+        String tab = intent.getStringExtra(EXTRA_START_TAB);
+        if (tab != null && !tab.trim().isEmpty()) {
+            initialTab = tab.trim();
+        }
+        if (TAB_DDOS.equalsIgnoreCase(initialTab)) {
+            String ip = intent.getStringExtra(EXTRA_DDOS_IP);
+            if (ip != null && !ip.trim().isEmpty()) pendingDdosIp = ip.trim();
+        }
+    }
+
+    private int tabToNavId(String tab) {
+        if (tab == null) return R.id.nav_dashboard;
+        String t = tab.trim().toLowerCase();
+        if (TAB_SETTINGS.equals(t)) return R.id.nav_settings;
+        if (TAB_TICKETS.equals(t)) return R.id.nav_tickets;
+        if (TAB_PRACTICALS.equals(t)) return R.id.nav_practicals;
+        if (TAB_DDOS.equals(t)) return R.id.nav_ddos;
+        return R.id.nav_dashboard;
     }
 
     private void showFragment(Fragment f, boolean showBottomNav) {

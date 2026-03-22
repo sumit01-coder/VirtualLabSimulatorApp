@@ -51,6 +51,15 @@ import retrofit2.Response;
 public final class DdosFragment extends BaseAuthedFragment
         implements DdosTopIpsAdapter.Listener, DdosBlockedAdapter.Listener, DdosRecentAdapter.Listener {
     private static final int AUTO_REFRESH_SECONDS = 5;
+    private static final String ARG_SELECTED_IP = "selected_ip";
+
+    public static DdosFragment newInstance(@Nullable String selectedIp) {
+        DdosFragment f = new DdosFragment();
+        Bundle b = new Bundle();
+        if (selectedIp != null) b.putString(ARG_SELECTED_IP, selectedIp);
+        f.setArguments(b);
+        return f;
+    }
 
     private ApiService api;
     private TokenStore store;
@@ -143,6 +152,13 @@ public final class DdosFragment extends BaseAuthedFragment
         topIpsList.setAdapter(topIpsAdapter);
         recentList.setLayoutManager(new LinearLayoutManager(getContext()));
         recentList.setAdapter(recentAdapter);
+
+        if (getArguments() != null) {
+            String argIp = getArguments().getString(ARG_SELECTED_IP, "");
+            if (argIp != null && !argIp.trim().isEmpty()) {
+                setSelectedIp(argIp.trim());
+            }
+        }
 
         manualBlockBtn = v.findViewById(R.id.blockBtn);
         if (manualBlockBtn != null) manualBlockBtn.setOnClickListener(view -> showManualBlockDialog(selectedIp));
