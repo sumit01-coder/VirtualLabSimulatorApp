@@ -10,7 +10,7 @@ import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 
-import com.virtuallab.admin.R;
+import com.sumit.virtuallabadmin.v28.R;
 
 public final class NotificationHelper {
     public static final String CHANNEL_ID = "vl_admin_updates";

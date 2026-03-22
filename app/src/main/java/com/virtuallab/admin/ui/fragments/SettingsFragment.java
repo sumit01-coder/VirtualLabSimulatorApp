@@ -18,8 +18,8 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.switchmaterial.SwitchMaterial;
-import com.virtuallab.admin.BuildConfig;
-import com.virtuallab.admin.R;
+import com.sumit.virtuallabadmin.v28.BuildConfig;
+import com.sumit.virtuallabadmin.v28.R;
 import com.virtuallab.admin.api.ApiClient;
 import com.virtuallab.admin.api.ApiService;
 import com.virtuallab.admin.data.TokenStore;
