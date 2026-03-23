@@ -1,5 +1,7 @@
 package com.virtuallab.admin.model;
 
+import java.util.List;
+
 public final class Practical {
     public int id;
     public String title;
@@ -14,5 +16,7 @@ public final class Practical {
     public String program_output;
     public String code_description;
     public String simulator_link;
+    public String simulator_url;
     public String figure_path;
+    public List<String> figure_urls;
 }

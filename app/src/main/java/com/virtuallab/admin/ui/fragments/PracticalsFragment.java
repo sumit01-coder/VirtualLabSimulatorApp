@@ -1,15 +1,22 @@
 package com.virtuallab.admin.ui.fragments;
 
 import android.content.Context;
+import android.net.Uri;
 import android.os.Bundle;
+import android.os.Build;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.webkit.WebSettings;
+import android.webkit.WebResourceRequest;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -17,6 +24,8 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
+import com.google.android.material.button.MaterialButton;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.textfield.MaterialAutoCompleteTextView;
 import com.google.android.material.textfield.TextInputEditText;
@@ -172,6 +181,8 @@ public final class PracticalsFragment extends BaseAuthedFragment {
         TextView code = content.findViewById(R.id.code);
         TextView output = content.findViewById(R.id.output);
         TextView links = content.findViewById(R.id.links);
+        ImageView figurePreview = content.findViewById(R.id.figurePreview);
+        MaterialButton previewSimulatorBtn = content.findViewById(R.id.previewSimulatorBtn);
 
         String metaText = "ID: " + p.id;
         if (p.lab_name != null && !p.lab_name.trim().isEmpty()) metaText += " • Lab: " + p.lab_name.trim();
@@ -186,10 +197,21 @@ public final class PracticalsFragment extends BaseAuthedFragment {
         bindSection(output, "Expected Output", p.program_output);
 
         StringBuilder linkText = new StringBuilder();
-        if (p.simulator_link != null && !p.simulator_link.trim().isEmpty()) {
-            linkText.append("Simulator: ").append(p.simulator_link.trim()).append('\n');
+        String simUrl = null;
+        if (p.simulator_url != null && !p.simulator_url.trim().isEmpty()) simUrl = p.simulator_url.trim();
+        else if (p.simulator_link != null && !p.simulator_link.trim().isEmpty()) simUrl = p.simulator_link.trim();
+        if (simUrl != null) {
+            linkText.append("Simulator: ").append(simUrl).append('\n');
         }
-        if (p.figure_path != null && !p.figure_path.trim().isEmpty()) {
+        if (p.figure_urls != null && !p.figure_urls.isEmpty()) {
+            linkText.append("Figures:").append('\n');
+            for (String u : p.figure_urls) {
+                if (u == null) continue;
+                String url = u.trim();
+                if (url.isEmpty()) continue;
+                linkText.append(url).append('\n');
+            }
+        } else if (p.figure_path != null && !p.figure_path.trim().isEmpty()) {
             linkText.append("Figures: ").append(p.figure_path.trim()).append('\n');
         }
         if (p.code_description != null && !p.code_description.trim().isEmpty()) {
@@ -200,6 +222,33 @@ public final class PracticalsFragment extends BaseAuthedFragment {
         } else {
             links.setText(linkText.toString().trim());
             links.setVisibility(View.VISIBLE);
+        }
+
+        // Inline figure preview (no external browser redirect)
+        String firstFigureUrl = null;
+        if (p.figure_urls != null) {
+            for (String u : p.figure_urls) {
+                if (u == null) continue;
+                String url = u.trim();
+                if (!url.isEmpty()) { firstFigureUrl = url; break; }
+            }
+        }
+        if (firstFigureUrl != null && figurePreview != null) {
+            figurePreview.setVisibility(View.VISIBLE);
+            String fullUrl = firstFigureUrl;
+            Glide.with(figurePreview).load(fullUrl).centerInside().into(figurePreview);
+            figurePreview.setOnClickListener(v -> showImagePreviewDialog(fullUrl));
+        } else if (figurePreview != null) {
+            figurePreview.setVisibility(View.GONE);
+        }
+
+        // Simulator preview in a WebView dialog (no external browser redirect)
+        if (previewSimulatorBtn != null && simUrl != null && !simUrl.trim().isEmpty()) {
+            String simulatorUrl = simUrl.trim();
+            previewSimulatorBtn.setVisibility(View.VISIBLE);
+            previewSimulatorBtn.setOnClickListener(v -> showWebPreviewDialog(title, simulatorUrl));
+        } else if (previewSimulatorBtn != null) {
+            previewSimulatorBtn.setVisibility(View.GONE);
         }
 
         new MaterialAlertDialogBuilder(requireContext())
@@ -217,6 +266,84 @@ public final class PracticalsFragment extends BaseAuthedFragment {
         }
         tv.setText(label + ":\n" + value.trim());
         tv.setVisibility(View.VISIBLE);
+    }
+
+    private void showWebPreviewDialog(String title, String url) {
+        if (!isAdded() || getContext() == null) return;
+        if (url == null || url.trim().isEmpty()) return;
+
+        final String startUrl = url.trim();
+        final Uri startUri = Uri.parse(startUrl);
+        final String allowedHost = startUri.getHost();
+        if (allowedHost == null || allowedHost.trim().isEmpty()) return;
+
+        WebView web = new WebView(requireContext());
+        WebSettings s = web.getSettings();
+        s.setJavaScriptEnabled(true); // simulator pages may require JS
+        s.setDomStorageEnabled(true);
+        s.setLoadWithOverviewMode(true);
+        s.setUseWideViewPort(true);
+        s.setJavaScriptCanOpenWindowsAutomatically(false);
+        s.setAllowFileAccess(false);
+        s.setAllowContentAccess(false);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            s.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            s.setSafeBrowsingEnabled(true);
+        }
+
+        web.setWebViewClient(new WebViewClient() {
+            @Override
+            public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+                if (request == null || request.getUrl() == null) return true;
+                Uri u = request.getUrl();
+                String host = u.getHost();
+                if (host == null) return true;
+                return !allowedHost.equalsIgnoreCase(host);
+            }
+
+            @Override
+            public boolean shouldOverrideUrlLoading(WebView view, String url) {
+                if (url == null) return true;
+                Uri u = Uri.parse(url);
+                String host = u.getHost();
+                if (host == null) return true;
+                return !allowedHost.equalsIgnoreCase(host);
+            }
+        });
+        web.loadUrl(startUrl);
+
+        androidx.appcompat.app.AlertDialog dlg = new MaterialAlertDialogBuilder(requireContext())
+                .setTitle("Preview: " + title)
+                .setView(web)
+                .setPositiveButton("Close", null)
+                .show();
+
+        dlg.setOnDismissListener(d -> {
+            try { web.loadUrl("about:blank"); } catch (Exception ignored) {}
+            try { web.stopLoading(); } catch (Exception ignored) {}
+            try { web.destroy(); } catch (Exception ignored) {}
+        });
+    }
+
+    private void showImagePreviewDialog(String url) {
+        if (!isAdded() || getContext() == null) return;
+        if (url == null || url.trim().isEmpty()) return;
+
+        ImageView img = new ImageView(requireContext());
+        img.setAdjustViewBounds(true);
+        img.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        int pad = (int) (16 * requireContext().getResources().getDisplayMetrics().density);
+        img.setPadding(pad, pad, pad, pad);
+
+        Glide.with(img).load(url.trim()).fitCenter().into(img);
+
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle("Image Preview")
+                .setView(img)
+                .setPositiveButton("Close", null)
+                .show();
     }
 
     @Override

@@ -65,6 +65,25 @@
             android:textColor="@color/text_primary"
             android:textIsSelectable="true" />
 
+        <ImageView
+            android:id="@+id/figurePreview"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_md"
+            android:adjustViewBounds="true"
+            android:contentDescription="@string/app_name"
+            android:scaleType="fitCenter"
+            android:visibility="gone" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/previewSimulatorBtn"
+            style="?attr/materialButtonOutlinedStyle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_md"
+            android:text="Preview Simulator"
+            android:visibility="gone" />
+
         <TextView
             android:id="@+id/links"
             android:layout_width="match_parent"

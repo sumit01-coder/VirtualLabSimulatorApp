@@ -16,6 +16,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.switchmaterial.SwitchMaterial;
 import com.sumit.virtuallabadmin.v29.BuildConfig;
@@ -34,6 +35,7 @@ import com.virtuallab.admin.ui.LabsActivity;
 import com.virtuallab.admin.ui.DepartmentsActivity;
 import com.virtuallab.admin.ui.AppUpdateActivity;
 import com.virtuallab.admin.ui.MainActivity;
+import com.virtuallab.admin.ui.ThemePrefs;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -65,6 +67,7 @@ public final class SettingsFragment extends BaseAuthedFragment {
     private MaterialButton saveBtn;
     private MaterialButton manageLabsBtn;
     private MaterialButton manageDepartmentsBtn;
+    private MaterialButton themeModeBtn;
 
     private TextView appVersionText;
     private TextView appUpdateStatusText;
@@ -100,6 +103,7 @@ public final class SettingsFragment extends BaseAuthedFragment {
         saveBtn = v.findViewById(R.id.saveBtn);
         manageLabsBtn = v.findViewById(R.id.manageLabsBtn);
         manageDepartmentsBtn = v.findViewById(R.id.manageDepartmentsBtn);
+        themeModeBtn = v.findViewById(R.id.themeModeBtn);
 
         appVersionText = v.findViewById(R.id.appVersionText);
         appUpdateStatusText = v.findViewById(R.id.appUpdateStatusText);
@@ -109,6 +113,11 @@ public final class SettingsFragment extends BaseAuthedFragment {
 
         appUpdatePrefs = requireContext().getSharedPreferences(APP_UPDATE_PREFS, Context.MODE_PRIVATE);
         appVersionText.setText("Current version: " + BuildConfig.VERSION_NAME + " (" + BuildConfig.VERSION_CODE + ")");
+
+        if (themeModeBtn != null) {
+            themeModeBtn.setText("Theme: " + ThemePrefs.getModeLabel(requireContext()));
+            themeModeBtn.setOnClickListener(view -> showThemeDialog());
+        }
         boolean autoEnabled = appUpdatePrefs.getBoolean(KEY_AUTO_CHECK, true);
         autoUpdateSwitch.setChecked(autoEnabled);
         autoUpdateSwitch.setOnCheckedChangeListener((btn, isChecked) ->
@@ -460,6 +469,31 @@ public final class SettingsFragment extends BaseAuthedFragment {
         return "Settings saved. Maintenance: " + (newMaintenance ? "ON" : "OFF") + ", Email 2FA: " + (new2fa ? "ON" : "OFF");
     }
 
+    private void showThemeDialog() {
+        if (!isAdded() || getContext() == null) return;
+
+        final String[] labels = new String[] { "System", "Light", "Dark" };
+        int current = ThemePrefs.getMode(requireContext());
+        int checked = 0;
+        if (current == ThemePrefs.MODE_LIGHT) checked = 1;
+        else if (current == ThemePrefs.MODE_DARK) checked = 2;
+
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle("Theme")
+                .setSingleChoiceItems(labels, checked, (dialog, which) -> {
+                    int mode = ThemePrefs.MODE_SYSTEM;
+                    if (which == 1) mode = ThemePrefs.MODE_LIGHT;
+                    else if (which == 2) mode = ThemePrefs.MODE_DARK;
+
+                    ThemePrefs.setMode(requireContext(), mode);
+                    if (themeModeBtn != null) themeModeBtn.setText("Theme: " + ThemePrefs.getModeLabel(requireContext()));
+                    dialog.dismiss();
+                    requireActivity().recreate();
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
     @Override
     public void onDestroyView() {
         if (loadCall != null) { loadCall.cancel(); loadCall = null; }
@@ -473,6 +507,7 @@ public final class SettingsFragment extends BaseAuthedFragment {
         saveBtn = null;
         manageLabsBtn = null;
         manageDepartmentsBtn = null;
+        themeModeBtn = null;
         appVersionText = null;
         appUpdateStatusText = null;
         autoUpdateSwitch = null;
