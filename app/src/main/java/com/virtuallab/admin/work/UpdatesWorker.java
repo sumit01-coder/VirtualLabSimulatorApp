@@ -14,6 +14,7 @@ import com.sumit.virtuallabadmin.v29.BuildConfig;
 import com.virtuallab.admin.api.ApiClient;
 import com.virtuallab.admin.api.ApiService;
 import com.virtuallab.admin.data.TokenStore;
+import com.virtuallab.admin.feature.FeaturePrefs;
 import com.virtuallab.admin.model.ApiResponse;
 import com.virtuallab.admin.model.AppUpdateData;
 import com.virtuallab.admin.model.DdosBlockedIp;
@@ -59,6 +60,7 @@ public final class UpdatesWorker extends Worker {
         Context context = getApplicationContext();
         TokenStore store = new TokenStore(context);
         if (!store.hasToken()) return Result.success();
+        boolean realtimeAlerts = FeaturePrefs.isRealtimeAlertsEnabled(context);
 
         ApiService api = ApiClient.get(store);
 
@@ -85,24 +87,32 @@ public final class UpdatesWorker extends Worker {
                 if (lastMaintenance == -1) lastMaintenance = maintenanceMode ? 1 : 0;
 
                 if (newestTicketId > lastTicketId) {
-                    String subject = data.latest_ticket.subject != null ? data.latest_ticket.subject : "New support ticket";
-                    NotificationHelper.notify(context, 1001, "New ticket", subject);
+                    if (realtimeAlerts) {
+                        String subject = data.latest_ticket.subject != null ? data.latest_ticket.subject : "New support ticket";
+                        NotificationHelper.notify(context, 1001, "New ticket", subject);
+                    }
                     lastTicketId = newestTicketId;
                 }
 
                 if (newestPracticalId > lastPracticalId) {
-                    String title = data.latest_practical.title != null ? data.latest_practical.title : "New practical added";
-                    NotificationHelper.notify(context, 1002, "New practical", title);
+                    if (realtimeAlerts) {
+                        String title = data.latest_practical.title != null ? data.latest_practical.title : "New practical added";
+                        NotificationHelper.notify(context, 1002, "New practical", title);
+                    }
                     lastPracticalId = newestPracticalId;
                 }
 
                 if (lastMaintenance == 0 && maintenanceMode) {
-                    PendingIntent pi = buildMainIntent(context, MainActivity.TAB_SETTINGS, null, 1003);
-                    NotificationHelper.notify(context, 1003, "Maintenance mode", "Maintenance mode is now ON.", pi);
+                    if (realtimeAlerts) {
+                        PendingIntent pi = buildMainIntent(context, MainActivity.TAB_SETTINGS, null, 1003);
+                        NotificationHelper.notify(context, 1003, "Maintenance mode", "Maintenance mode is now ON.", pi);
+                    }
                     lastMaintenance = 1;
                 } else if (lastMaintenance == 1 && !maintenanceMode) {
-                    PendingIntent pi = buildMainIntent(context, MainActivity.TAB_SETTINGS, null, 1003);
-                    NotificationHelper.notify(context, 1003, "Maintenance mode", "Maintenance mode is now OFF.", pi);
+                    if (realtimeAlerts) {
+                        PendingIntent pi = buildMainIntent(context, MainActivity.TAB_SETTINGS, null, 1003);
+                        NotificationHelper.notify(context, 1003, "Maintenance mode", "Maintenance mode is now OFF.", pi);
+                    }
                     lastMaintenance = 0;
                 } else {
                     lastMaintenance = maintenanceMode ? 1 : 0;
@@ -144,7 +154,7 @@ public final class UpdatesWorker extends Worker {
                             if (!prev.contains(ip)) newlyBlocked.add(ip);
                         }
 
-                        if (!newlyBlocked.isEmpty()) {
+                        if (realtimeAlerts && !newlyBlocked.isEmpty()) {
                             String first = newlyBlocked.get(0);
                             String text = "Blocked IP: " + first;
                             if (newlyBlocked.size() > 1) {

@@ -20,6 +20,7 @@ import com.sumit.virtuallabadmin.v29.R;
 import com.virtuallab.admin.api.ApiClient;
 import com.virtuallab.admin.api.ApiService;
 import com.virtuallab.admin.data.TokenStore;
+import com.virtuallab.admin.feature.OfflineCache;
 import com.virtuallab.admin.model.ApiResponse;
 import com.virtuallab.admin.model.Stats;
 import com.virtuallab.admin.ui.LoginActivity;
@@ -32,6 +33,7 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 public final class DashboardFragment extends BaseAuthedFragment {
+    private static final String CACHE_KEY = "dashboard.cache";
     private ApiService api;
     private SwipeRefreshLayout swipe;
     private TokenStore store;
@@ -138,23 +140,41 @@ public final class DashboardFragment extends BaseAuthedFragment {
                     return;
                 }
                 if (!response.isSuccessful() || response.body() == null || !response.body().status || response.body().data == null) {
-                    Toast.makeText(getContext(), "Failed to load dashboard", Toast.LENGTH_SHORT).show();
+                    Stats cached = OfflineCache.getObject(requireContext(), CACHE_KEY, Stats.class);
+                    if (cached != null) {
+                        bindStats(cached);
+                        Toast.makeText(getContext(), "Loaded cached dashboard", Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(getContext(), "Failed to load dashboard", Toast.LENGTH_SHORT).show();
+                    }
                     return;
                 }
                 Stats s = response.body().data;
-                departments.setText(String.valueOf(s.departments));
-                labs.setText(String.valueOf(s.labs));
-                practicals.setText(String.valueOf(s.practicals));
-                users.setText(String.valueOf(s.users));
-                letters.setText(String.valueOf(s.verified_letters));
-                tickets.setText(String.valueOf(s.active_tickets));
+                OfflineCache.putObject(requireContext(), CACHE_KEY, s);
+                bindStats(s);
             }
 
             @Override
             public void onFailure(Call<ApiResponse<Stats>> call, Throwable t) {
                 swipe.setRefreshing(false);
-                Toast.makeText(getContext(), "Network error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                Stats cached = OfflineCache.getObject(requireContext(), CACHE_KEY, Stats.class);
+                if (cached != null) {
+                    bindStats(cached);
+                    Toast.makeText(getContext(), "Offline mode: cached dashboard", Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(getContext(), "Network error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                }
             }
         });
+    }
+
+    private void bindStats(Stats s) {
+        if (s == null) return;
+        departments.setText(String.valueOf(s.departments));
+        labs.setText(String.valueOf(s.labs));
+        practicals.setText(String.valueOf(s.practicals));
+        users.setText(String.valueOf(s.users));
+        letters.setText(String.valueOf(s.verified_letters));
+        tickets.setText(String.valueOf(s.active_tickets));
     }
 }

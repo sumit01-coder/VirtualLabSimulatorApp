@@ -16,14 +16,17 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
-import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.switchmaterial.SwitchMaterial;
 import com.sumit.virtuallabadmin.v29.BuildConfig;
 import com.sumit.virtuallabadmin.v29.R;
 import com.virtuallab.admin.api.ApiClient;
 import com.virtuallab.admin.api.ApiService;
 import com.virtuallab.admin.data.TokenStore;
+import com.virtuallab.admin.feature.AuditLog;
+import com.virtuallab.admin.feature.FeaturePrefs;
+import com.virtuallab.admin.feature.RemoteConfigManager;
 import com.virtuallab.admin.model.ApiResponse;
 import com.virtuallab.admin.model.AppUpdateData;
 import com.virtuallab.admin.model.SettingsData;
@@ -31,14 +34,19 @@ import com.virtuallab.admin.model.SettingsUpdateRequest;
 import com.virtuallab.admin.notifications.NotificationHelper;
 import com.virtuallab.admin.security.AppLockPrefs;
 import com.virtuallab.admin.security.AppLockSupport;
-import com.virtuallab.admin.ui.LabsActivity;
-import com.virtuallab.admin.ui.DepartmentsActivity;
+import com.virtuallab.admin.ui.AnalyticsActivity;
+import com.virtuallab.admin.ui.ApiHealthActivity;
 import com.virtuallab.admin.ui.AppUpdateActivity;
+import com.virtuallab.admin.ui.AuditLogActivity;
+import com.virtuallab.admin.ui.DepartmentsActivity;
+import com.virtuallab.admin.ui.LabsActivity;
 import com.virtuallab.admin.ui.MainActivity;
+import com.virtuallab.admin.ui.PermissionMatrixActivity;
 import com.virtuallab.admin.ui.ThemePrefs;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Executors;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -68,12 +76,19 @@ public final class SettingsFragment extends BaseAuthedFragment {
     private MaterialButton manageLabsBtn;
     private MaterialButton manageDepartmentsBtn;
     private MaterialButton themeModeBtn;
+    private MaterialButton permissionsBtn;
+    private MaterialButton auditLogBtn;
+    private MaterialButton apiHealthBtn;
+    private MaterialButton analyticsBtn;
 
     private TextView appVersionText;
     private TextView appUpdateStatusText;
     private SwitchMaterial autoUpdateSwitch;
+    private SwitchMaterial realtimeAlertsSwitch;
     private MaterialButton checkUpdateBtn;
     private MaterialButton updateNowBtn;
+    private MaterialButton syncRemoteConfigBtn;
+
     private SharedPreferences appUpdatePrefs;
     private String latestDownloadUrl;
     private String latestReleaseUrl;
@@ -104,12 +119,18 @@ public final class SettingsFragment extends BaseAuthedFragment {
         manageLabsBtn = v.findViewById(R.id.manageLabsBtn);
         manageDepartmentsBtn = v.findViewById(R.id.manageDepartmentsBtn);
         themeModeBtn = v.findViewById(R.id.themeModeBtn);
+        permissionsBtn = v.findViewById(R.id.permissionsBtn);
+        auditLogBtn = v.findViewById(R.id.auditLogBtn);
+        apiHealthBtn = v.findViewById(R.id.apiHealthBtn);
+        analyticsBtn = v.findViewById(R.id.analyticsBtn);
 
         appVersionText = v.findViewById(R.id.appVersionText);
         appUpdateStatusText = v.findViewById(R.id.appUpdateStatusText);
         autoUpdateSwitch = v.findViewById(R.id.autoUpdateSwitch);
+        realtimeAlertsSwitch = v.findViewById(R.id.realtimeAlertsSwitch);
         checkUpdateBtn = v.findViewById(R.id.checkUpdateBtn);
         updateNowBtn = v.findViewById(R.id.updateNowBtn);
+        syncRemoteConfigBtn = v.findViewById(R.id.syncRemoteConfigBtn);
 
         appUpdatePrefs = requireContext().getSharedPreferences(APP_UPDATE_PREFS, Context.MODE_PRIVATE);
         appVersionText.setText("Current version: " + BuildConfig.VERSION_NAME + " (" + BuildConfig.VERSION_CODE + ")");
@@ -118,13 +139,24 @@ public final class SettingsFragment extends BaseAuthedFragment {
             themeModeBtn.setText("Theme: " + ThemePrefs.getModeLabel(requireContext()));
             themeModeBtn.setOnClickListener(view -> showThemeDialog());
         }
+
         boolean autoEnabled = appUpdatePrefs.getBoolean(KEY_AUTO_CHECK, true);
         autoUpdateSwitch.setChecked(autoEnabled);
         autoUpdateSwitch.setOnCheckedChangeListener((btn, isChecked) ->
                 appUpdatePrefs.edit().putBoolean(KEY_AUTO_CHECK, isChecked).apply()
         );
+
+        realtimeAlertsSwitch.setChecked(FeaturePrefs.isRealtimeAlertsEnabled(requireContext()));
+        realtimeAlertsSwitch.setOnCheckedChangeListener((btn, isChecked) -> {
+            if (!isAdded()) return;
+            FeaturePrefs.setRealtimeAlertsEnabled(requireContext(), isChecked);
+            Toast.makeText(requireContext(), isChecked ? "Realtime alerts enabled" : "Realtime alerts disabled", Toast.LENGTH_SHORT).show();
+            AuditLog.write(requireContext(), store.getUsername(), "settings.realtime_alerts", "enabled=" + isChecked);
+        });
+
         checkUpdateBtn.setOnClickListener(vv -> checkForAppUpdate(true));
         updateNowBtn.setOnClickListener(vv -> openAppUpdate());
+        syncRemoteConfigBtn.setOnClickListener(vv -> syncRemoteConfig());
         renderLastAppUpdateState();
 
         boolean canEdit = "super_admin".equalsIgnoreCase(store.getRole());
@@ -148,6 +180,7 @@ public final class SettingsFragment extends BaseAuthedFragment {
                 String msg = isChecked ? "App lock enabled" : "App lock disabled";
                 Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show();
                 NotificationHelper.notify(requireContext(), 1203, "App security", msg);
+                AuditLog.write(requireContext(), store.getUsername(), "settings.app_lock", "enabled=" + isChecked);
             });
         }
 
@@ -157,8 +190,38 @@ public final class SettingsFragment extends BaseAuthedFragment {
         manageDepartmentsBtn.setOnClickListener(vv -> startActivity(new Intent(requireContext(), DepartmentsActivity.class)));
         manageDepartmentsBtn.setVisibility(canEdit ? View.VISIBLE : View.GONE);
 
+        permissionsBtn.setOnClickListener(vv -> startActivity(new Intent(requireContext(), PermissionMatrixActivity.class)));
+        auditLogBtn.setOnClickListener(vv -> startActivity(new Intent(requireContext(), AuditLogActivity.class)));
+        apiHealthBtn.setOnClickListener(vv -> startActivity(new Intent(requireContext(), ApiHealthActivity.class)));
+        analyticsBtn.setOnClickListener(vv -> startActivity(new Intent(requireContext(), AnalyticsActivity.class)));
+
         load();
         return v;
+    }
+
+    private void syncRemoteConfig() {
+        if (!isAdded()) return;
+        syncRemoteConfigBtn.setEnabled(false);
+        Toast.makeText(requireContext(), "Syncing remote config...", Toast.LENGTH_SHORT).show();
+        Executors.newSingleThreadExecutor().execute(() -> {
+            try {
+                RemoteConfigManager.Data data = RemoteConfigManager.sync(requireContext());
+                if (!isAdded()) return;
+                requireActivity().runOnUiThread(() -> {
+                    syncRemoteConfigBtn.setEnabled(true);
+                    realtimeAlertsSwitch.setChecked(data.realtime_alerts);
+                    Toast.makeText(requireContext(), "Remote config synced", Toast.LENGTH_SHORT).show();
+                    AuditLog.write(requireContext(), store.getUsername(), "settings.remote_config_sync", "ok=true");
+                });
+            } catch (Exception e) {
+                if (!isAdded()) return;
+                requireActivity().runOnUiThread(() -> {
+                    syncRemoteConfigBtn.setEnabled(true);
+                    Toast.makeText(requireContext(), "Remote config sync failed", Toast.LENGTH_SHORT).show();
+                    AuditLog.write(requireContext(), store.getUsername(), "settings.remote_config_sync", "ok=false");
+                });
+            }
+        });
     }
 
     private void renderLastAppUpdateState() {
@@ -290,6 +353,8 @@ public final class SettingsFragment extends BaseAuthedFragment {
         admin2faSwitch.setEnabled(enabled);
         saveBtn.setEnabled(enabled);
         if (appLockSwitch != null) appLockSwitch.setEnabled(true);
+        if (realtimeAlertsSwitch != null) realtimeAlertsSwitch.setEnabled(true);
+        if (syncRemoteConfigBtn != null) syncRemoteConfigBtn.setEnabled(true);
     }
 
     private void setLoading(boolean loading) {
@@ -373,10 +438,7 @@ public final class SettingsFragment extends BaseAuthedFragment {
 
         setLoading(true);
         if (saveCall != null) saveCall.cancel();
-        saveCall = api.updateSettings(new SettingsUpdateRequest(
-                desiredMaintenance,
-                desired2fa
-        ));
+        saveCall = api.updateSettings(new SettingsUpdateRequest(desiredMaintenance, desired2fa));
         saveCall.enqueue(new Callback<ApiResponse<SettingsData>>() {
             @Override
             public void onResponse(Call<ApiResponse<SettingsData>> call, Response<ApiResponse<SettingsData>> response) {
@@ -427,6 +489,7 @@ public final class SettingsFragment extends BaseAuthedFragment {
                     }
                     PendingIntent pi = PendingIntent.getActivity(ctx, NOTIFICATION_ID_SETTINGS, ui, piFlags);
                     NotificationHelper.notify(ctx, NOTIFICATION_ID_SETTINGS, "System settings", msg, pi);
+                    AuditLog.write(ctx, store.getUsername(), "settings.save", msg);
                 }
                 setEnabled("super_admin".equalsIgnoreCase(store.getRole()));
             }
@@ -453,9 +516,9 @@ public final class SettingsFragment extends BaseAuthedFragment {
     }
 
     private static String buildSettingsSavedMessage(@Nullable Boolean prevMaintenance,
-                                                   @Nullable Boolean prev2fa,
-                                                   boolean newMaintenance,
-                                                   boolean new2fa) {
+                                                    @Nullable Boolean prev2fa,
+                                                    boolean newMaintenance,
+                                                    boolean new2fa) {
         List<String> parts = new ArrayList<>(2);
         if (prevMaintenance != null && prevMaintenance != newMaintenance) {
             parts.add("Maintenance mode " + (newMaintenance ? "enabled" : "disabled"));
@@ -464,7 +527,7 @@ public final class SettingsFragment extends BaseAuthedFragment {
             parts.add("Email 2FA " + (new2fa ? "enabled" : "disabled"));
         }
         if (!parts.isEmpty()) {
-            return TextUtils.join(" · ", parts);
+            return TextUtils.join(" | ", parts);
         }
         return "Settings saved. Maintenance: " + (newMaintenance ? "ON" : "OFF") + ", Email 2FA: " + (new2fa ? "ON" : "OFF");
     }
@@ -508,13 +571,17 @@ public final class SettingsFragment extends BaseAuthedFragment {
         manageLabsBtn = null;
         manageDepartmentsBtn = null;
         themeModeBtn = null;
+        permissionsBtn = null;
+        auditLogBtn = null;
+        apiHealthBtn = null;
+        analyticsBtn = null;
         appVersionText = null;
         appUpdateStatusText = null;
         autoUpdateSwitch = null;
+        realtimeAlertsSwitch = null;
         checkUpdateBtn = null;
         updateNowBtn = null;
+        syncRemoteConfigBtn = null;
         super.onDestroyView();
     }
 }
-
-

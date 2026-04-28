@@ -13,10 +13,11 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
+import com.google.android.material.button.MaterialButton;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.textfield.MaterialAutoCompleteTextView;
 import com.google.android.material.textfield.TextInputEditText;
@@ -24,6 +25,9 @@ import com.sumit.virtuallabadmin.v29.R;
 import com.virtuallab.admin.api.ApiClient;
 import com.virtuallab.admin.api.ApiService;
 import com.virtuallab.admin.data.TokenStore;
+import com.virtuallab.admin.feature.AuditLog;
+import com.virtuallab.admin.feature.OfflineCache;
+import com.virtuallab.admin.feature.PermissionMatrix;
 import com.virtuallab.admin.model.ApiResponse;
 import com.virtuallab.admin.model.Ticket;
 import com.virtuallab.admin.model.TicketActionRequest;
@@ -38,6 +42,8 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 public final class TicketsFragment extends BaseAuthedFragment implements TicketsAdapter.Listener {
+    private static final String CACHE_KEY = "tickets.cache";
+
     private ApiService api;
     private TokenStore store;
     private SwipeRefreshLayout swipe;
@@ -48,6 +54,10 @@ public final class TicketsFragment extends BaseAuthedFragment implements Tickets
     private MaterialAutoCompleteTextView statusFilterInput;
     private TextView countText;
     private TextView emptyText;
+    private TextView selectionText;
+    private View bulkActionsRow;
+    private MaterialButton bulkCloseBtn;
+    private MaterialButton bulkAssignBtn;
     private RecyclerView list;
 
     private Call<ApiResponse<List<Ticket>>> pendingLoad;
@@ -65,6 +75,10 @@ public final class TicketsFragment extends BaseAuthedFragment implements Tickets
         statusFilterInput = v.findViewById(R.id.statusFilterInput);
         countText = v.findViewById(R.id.countText);
         emptyText = v.findViewById(R.id.emptyText);
+        selectionText = v.findViewById(R.id.selectionText);
+        bulkActionsRow = v.findViewById(R.id.bulkActionsRow);
+        bulkCloseBtn = v.findViewById(R.id.bulkCloseBtn);
+        bulkAssignBtn = v.findViewById(R.id.bulkAssignBtn);
 
         adapter = new TicketsAdapter(this);
         list.setLayoutManager(new LinearLayoutManager(getContext()));
@@ -80,14 +94,19 @@ public final class TicketsFragment extends BaseAuthedFragment implements Tickets
         statusFilterInput.setOnItemClickListener((parent, view, position, id) -> load());
 
         swipe.setOnRefreshListener(this::load);
+        bulkCloseBtn.setOnClickListener(v1 -> bulkCloseSelected());
+        bulkAssignBtn.setOnClickListener(v12 -> openAssignDialog());
 
         searchInput.addTextChangedListener(new TextWatcher() {
             @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {
-                applyFilter();
-            }
+            @Override public void onTextChanged(CharSequence s, int start, int before, int count) { applyFilter(); }
             @Override public void afterTextChanged(Editable s) {}
         });
+
+        if (!PermissionMatrix.has(store.getRole(), PermissionMatrix.Capability.CLOSE_TICKETS)) {
+            bulkCloseBtn.setEnabled(false);
+            bulkAssignBtn.setEnabled(false);
+        }
 
         load();
         return v;
@@ -112,12 +131,20 @@ public final class TicketsFragment extends BaseAuthedFragment implements Tickets
                 if (swipe != null) swipe.setRefreshing(false);
                 if (response.code() == 401) { handleUnauthorized(); return; }
                 if (!response.isSuccessful() || response.body() == null || !response.body().status || response.body().data == null) {
-                    Context ctx = getContext();
-                    if (ctx != null) Toast.makeText(ctx, "Failed to load tickets", Toast.LENGTH_SHORT).show();
+                    List<Ticket> cached = OfflineCache.getList(requireContext(), CACHE_KEY, Ticket.class);
+                    if (!cached.isEmpty()) {
+                        all.clear();
+                        all.addAll(cached);
+                        applyFilter();
+                        toast("Loaded cached tickets");
+                    } else {
+                        toast("Failed to load tickets");
+                    }
                     return;
                 }
                 all.clear();
                 all.addAll(response.body().data);
+                OfflineCache.putList(requireContext(), CACHE_KEY, all);
                 applyFilter();
                 if (list != null) list.scheduleLayoutAnimation();
             }
@@ -127,8 +154,15 @@ public final class TicketsFragment extends BaseAuthedFragment implements Tickets
                 if (!isAdded()) return;
                 if (call.isCanceled()) return;
                 if (swipe != null) swipe.setRefreshing(false);
-                Context ctx = getContext();
-                if (ctx != null) Toast.makeText(ctx, "Network error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                List<Ticket> cached = OfflineCache.getList(requireContext(), CACHE_KEY, Ticket.class);
+                if (!cached.isEmpty()) {
+                    all.clear();
+                    all.addAll(cached);
+                    applyFilter();
+                    toast("Offline mode: cached tickets");
+                } else {
+                    toast("Network error: " + t.getMessage());
+                }
             }
         });
     }
@@ -149,6 +183,7 @@ public final class TicketsFragment extends BaseAuthedFragment implements Tickets
         }
         adapter.submit(filtered);
         updateCountAndEmpty(filtered.size(), all.size());
+        onSelectionChanged(0);
     }
 
     private void updateCountAndEmpty(int shown, int total) {
@@ -157,9 +192,7 @@ public final class TicketsFragment extends BaseAuthedFragment implements Tickets
             else if (shown == total) countText.setText(total + " tickets");
             else countText.setText(shown + " / " + total);
         }
-        if (emptyText != null) {
-            emptyText.setVisibility(shown == 0 ? View.VISIBLE : View.GONE);
-        }
+        if (emptyText != null) emptyText.setVisibility(shown == 0 ? View.VISIBLE : View.GONE);
     }
 
     @Override
@@ -174,13 +207,16 @@ public final class TicketsFragment extends BaseAuthedFragment implements Tickets
         if (ticket.sender_name != null) msg.append("Sender: ").append(ticket.sender_name).append('\n');
         if (ticket.sender_email != null) msg.append("Email: ").append(ticket.sender_email).append('\n');
 
-        boolean canClose = ticket.status != null && !ticket.status.equalsIgnoreCase("closed");
+        boolean canClose = ticket.status != null && !ticket.status.equalsIgnoreCase("closed")
+                && PermissionMatrix.has(store.getRole(), PermissionMatrix.Capability.CLOSE_TICKETS);
+
         MaterialAlertDialogBuilder b = new MaterialAlertDialogBuilder(requireContext())
                 .setTitle(subject)
                 .setMessage(msg.toString().trim())
                 .setNegativeButton("Close", null);
 
         if (canClose) {
+            b.setNeutralButton("Assign/Note", (d, which) -> openAssignDialog(ticket));
             b.setPositiveButton("Close Ticket", (d, which) -> onResolve(ticket));
         } else {
             b.setPositiveButton("OK", null);
@@ -192,6 +228,10 @@ public final class TicketsFragment extends BaseAuthedFragment implements Tickets
     public void onResolve(Ticket ticket) {
         if (ticket == null) return;
         if (ticket.status != null && ticket.status.equalsIgnoreCase("closed")) return;
+        if (!PermissionMatrix.has(store.getRole(), PermissionMatrix.Capability.CLOSE_TICKETS)) {
+            toast("Permission denied");
+            return;
+        }
 
         new MaterialAlertDialogBuilder(requireContext())
                 .setTitle("Close ticket?")
@@ -211,12 +251,11 @@ public final class TicketsFragment extends BaseAuthedFragment implements Tickets
                 if (!isAdded()) return;
                 if (response.code() == 401) { handleUnauthorized(); return; }
                 if (!response.isSuccessful() || response.body() == null || !response.body().status) {
-                    Context ctx = getContext();
-                    if (ctx != null) Toast.makeText(ctx, "Failed to close ticket", Toast.LENGTH_SHORT).show();
+                    toast("Failed to close ticket");
                     return;
                 }
-                Context ctx = getContext();
-                if (ctx != null) Toast.makeText(ctx, "Ticket closed", Toast.LENGTH_SHORT).show();
+                toast("Ticket closed");
+                AuditLog.write(requireContext(), store.getUsername(), "ticket.close", "ticket_id=" + ticket.id);
                 load();
             }
 
@@ -224,10 +263,132 @@ public final class TicketsFragment extends BaseAuthedFragment implements Tickets
             public void onFailure(Call<ApiResponse<Object>> call, Throwable t) {
                 if (!isAdded()) return;
                 if (call.isCanceled()) return;
-                Context ctx = getContext();
-                if (ctx != null) Toast.makeText(ctx, "Network error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                toast("Network error: " + t.getMessage());
             }
         });
+    }
+
+    private void bulkCloseSelected() {
+        List<Ticket> selected = adapter.getSelectedItems();
+        if (selected.isEmpty()) {
+            toast("Select tickets first");
+            return;
+        }
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle("Close selected tickets?")
+                .setMessage("Selected: " + selected.size())
+                .setNegativeButton("Cancel", null)
+                .setPositiveButton("Close", (d, which) -> closeSequential(selected, 0, 0))
+                .show();
+    }
+
+    private void closeSequential(List<Ticket> selected, int index, int success) {
+        if (!isAdded()) return;
+        if (index >= selected.size()) {
+            toast("Closed " + success + " / " + selected.size());
+            AuditLog.write(requireContext(), store.getUsername(), "ticket.bulk_close", "count=" + success);
+            adapter.clearSelection();
+            load();
+            return;
+        }
+
+        Ticket t = selected.get(index);
+        api.ticketAction(new TicketActionRequest("close", t.id)).enqueue(new Callback<ApiResponse<Object>>() {
+            @Override
+            public void onResponse(Call<ApiResponse<Object>> call, Response<ApiResponse<Object>> response) {
+                int nextSuccess = success;
+                if (response.isSuccessful() && response.body() != null && response.body().status) nextSuccess++;
+                closeSequential(selected, index + 1, nextSuccess);
+            }
+
+            @Override
+            public void onFailure(Call<ApiResponse<Object>> call, Throwable t) {
+                closeSequential(selected, index + 1, success);
+            }
+        });
+    }
+
+    private void openAssignDialog() {
+        List<Ticket> selected = adapter.getSelectedItems();
+        if (selected.isEmpty()) {
+            toast("Select tickets first");
+            return;
+        }
+        openAssignDialogFor(selected);
+    }
+
+    private void openAssignDialog(Ticket single) {
+        List<Ticket> one = new ArrayList<>();
+        one.add(single);
+        openAssignDialogFor(one);
+    }
+
+    private void openAssignDialogFor(List<Ticket> tickets) {
+        if (!PermissionMatrix.has(store.getRole(), PermissionMatrix.Capability.ASSIGN_TICKETS)
+                && !PermissionMatrix.has(store.getRole(), PermissionMatrix.Capability.CLOSE_TICKETS)) {
+            toast("Permission denied");
+            return;
+        }
+
+        View content = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_ticket_assign, null, false);
+        TextInputEditText assigneeInput = content.findViewById(R.id.assigneeInput);
+        TextInputEditText noteInput = content.findViewById(R.id.noteInput);
+
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle("Assign / Note (" + tickets.size() + ")")
+                .setView(content)
+                .setNegativeButton("Cancel", null)
+                .setPositiveButton("Save", (d, which) -> {
+                    String assignee = assigneeInput.getText() != null ? assigneeInput.getText().toString().trim() : "";
+                    String note = noteInput.getText() != null ? noteInput.getText().toString().trim() : "";
+                    assignSequential(tickets, assignee, note, 0, 0);
+                })
+                .show();
+    }
+
+    private void assignSequential(List<Ticket> tickets, String assignee, String note, int index, int success) {
+        if (!isAdded()) return;
+        if (index >= tickets.size()) {
+            toast("Updated " + success + " / " + tickets.size());
+            AuditLog.write(requireContext(), store.getUsername(), "ticket.assign_note", "count=" + success + ", assignee=" + assignee);
+            adapter.clearSelection();
+            load();
+            return;
+        }
+
+        Ticket t = tickets.get(index);
+        api.ticketAction(new TicketActionRequest("assign", t.id, assignee, note)).enqueue(new Callback<ApiResponse<Object>>() {
+            @Override
+            public void onResponse(Call<ApiResponse<Object>> call, Response<ApiResponse<Object>> response) {
+                int nextSuccess = success;
+                if (response.isSuccessful() && response.body() != null && response.body().status) nextSuccess++;
+                assignSequential(tickets, assignee, note, index + 1, nextSuccess);
+            }
+
+            @Override
+            public void onFailure(Call<ApiResponse<Object>> call, Throwable t) {
+                assignSequential(tickets, assignee, note, index + 1, success);
+            }
+        });
+    }
+
+    @Override
+    public void onSelectionChanged(int count) {
+        if (selectionText == null || bulkActionsRow == null) return;
+        if (count <= 0) {
+            selectionText.setVisibility(View.GONE);
+            bulkActionsRow.setVisibility(View.GONE);
+        } else {
+            selectionText.setText(count + " selected");
+            selectionText.setVisibility(View.VISIBLE);
+            bulkActionsRow.setVisibility(View.VISIBLE);
+        }
+    }
+
+    private void toast(String msg) {
+        if (!isAdded()) return;
+        Context ctx = getContext();
+        if (ctx != null) Toast.makeText(ctx, msg, Toast.LENGTH_SHORT).show();
     }
 
     @Override
@@ -239,8 +400,11 @@ public final class TicketsFragment extends BaseAuthedFragment implements Tickets
         statusFilterInput = null;
         countText = null;
         emptyText = null;
+        selectionText = null;
+        bulkActionsRow = null;
+        bulkCloseBtn = null;
+        bulkAssignBtn = null;
         list = null;
         super.onDestroyView();
     }
 }
-

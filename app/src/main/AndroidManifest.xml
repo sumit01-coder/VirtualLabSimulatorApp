@@ -54,6 +54,18 @@
         <activity
             android:name="com.virtuallab.admin.ui.AppUpdateActivity"
             android:exported="false" />
+        <activity
+            android:name="com.virtuallab.admin.ui.PermissionMatrixActivity"
+            android:exported="false" />
+        <activity
+            android:name="com.virtuallab.admin.ui.AuditLogActivity"
+            android:exported="false" />
+        <activity
+            android:name="com.virtuallab.admin.ui.ApiHealthActivity"
+            android:exported="false" />
+        <activity
+            android:name="com.virtuallab.admin.ui.AnalyticsActivity"
+            android:exported="false" />
 
         <receiver
             android:name="com.virtuallab.admin.work.UpdateDownloadReceiver"

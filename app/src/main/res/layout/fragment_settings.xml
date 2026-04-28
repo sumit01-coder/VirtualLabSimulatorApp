@@ -225,6 +225,14 @@
                         android:textColor="@color/text_primary"
                         android:layout_marginTop="@dimen/space_md" />
 
+                    <com.google.android.material.switchmaterial.SwitchMaterial
+                        android:id="@+id/realtimeAlertsSwitch"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Realtime alerts mode"
+                        android:textColor="@color/text_primary"
+                        android:layout_marginTop="@dimen/space_sm" />
+
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/checkUpdateBtn"
                         style="@style/Widget.Material3.Button.OutlinedButton"
@@ -246,6 +254,15 @@
                         app:backgroundTint="@color/brand"
                         android:layout_marginTop="@dimen/space_sm"
                         android:visibility="gone" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/syncRemoteConfigBtn"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="@dimen/btn_h"
+                        android:text="Sync remote config"
+                        app:strokeColor="@color/brand"
+                        android:layout_marginTop="@dimen/space_sm" />
 
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
@@ -307,6 +324,42 @@
                         app:icon="@drawable/ic_departments_24"
                         app:iconPadding="@dimen/space_sm"
                         app:iconTint="@color/brand"
+                        app:strokeColor="@color/brand"
+                        android:layout_marginTop="@dimen/space_sm" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/permissionsBtn"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="@dimen/btn_h"
+                        android:text="Permissions matrix"
+                        app:strokeColor="@color/brand"
+                        android:layout_marginTop="@dimen/space_sm" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/auditLogBtn"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="@dimen/btn_h"
+                        android:text="Audit log"
+                        app:strokeColor="@color/brand"
+                        android:layout_marginTop="@dimen/space_sm" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/apiHealthBtn"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="@dimen/btn_h"
+                        android:text="API health monitor"
+                        app:strokeColor="@color/brand"
+                        android:layout_marginTop="@dimen/space_sm" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/analyticsBtn"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="@dimen/btn_h"
+                        android:text="Analytics trends"
                         app:strokeColor="@color/brand"
                         android:layout_marginTop="@dimen/space_sm" />
 

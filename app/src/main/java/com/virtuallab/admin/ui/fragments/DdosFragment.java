@@ -27,6 +27,8 @@ import com.sumit.virtuallabadmin.v29.R;
 import com.virtuallab.admin.api.ApiClient;
 import com.virtuallab.admin.api.ApiService;
 import com.virtuallab.admin.data.TokenStore;
+import com.virtuallab.admin.feature.AuditLog;
+import com.virtuallab.admin.feature.FeaturePrefs;
 import com.virtuallab.admin.model.ApiResponse;
 import com.virtuallab.admin.model.DdosBlockedIp;
 import com.virtuallab.admin.model.DdosOverview;
@@ -50,7 +52,7 @@ import retrofit2.Response;
 
 public final class DdosFragment extends BaseAuthedFragment
         implements DdosTopIpsAdapter.Listener, DdosBlockedAdapter.Listener, DdosRecentAdapter.Listener {
-    private static final int AUTO_REFRESH_SECONDS = 5;
+    private static final int DEFAULT_AUTO_REFRESH_SECONDS = 5;
     private static final String ARG_SELECTED_IP = "selected_ip";
 
     public static DdosFragment newInstance(@Nullable String selectedIp) {
@@ -84,13 +86,17 @@ public final class DdosFragment extends BaseAuthedFragment
     private TextView topEmpty;
     private TextView recentEmpty;
     private MaterialButton manualBlockBtn;
+    private MaterialButton presetRelaxedBtn;
+    private MaterialButton presetNormalBtn;
+    private MaterialButton presetStrictBtn;
 
     private DdosBlockedAdapter blockedAdapter;
     private DdosTopIpsAdapter topIpsAdapter;
     private DdosRecentAdapter recentAdapter;
 
     private final Handler handler = new Handler(Looper.getMainLooper());
-    private int countdown = AUTO_REFRESH_SECONDS;
+    private int autoRefreshSeconds = DEFAULT_AUTO_REFRESH_SECONDS;
+    private int countdown = DEFAULT_AUTO_REFRESH_SECONDS;
 
     private int inFlightLoads = 0;
     private String selectedIp = "";
@@ -110,7 +116,7 @@ public final class DdosFragment extends BaseAuthedFragment
 
             countdown--;
             if (countdown <= 0) {
-                countdown = AUTO_REFRESH_SECONDS;
+                countdown = autoRefreshSeconds;
                 loadAll();
             }
             handler.postDelayed(this, 1000);
@@ -162,19 +168,26 @@ public final class DdosFragment extends BaseAuthedFragment
 
         manualBlockBtn = v.findViewById(R.id.blockBtn);
         if (manualBlockBtn != null) manualBlockBtn.setOnClickListener(view -> showManualBlockDialog(selectedIp));
+        presetRelaxedBtn = v.findViewById(R.id.presetRelaxedBtn);
+        presetNormalBtn = v.findViewById(R.id.presetNormalBtn);
+        presetStrictBtn = v.findViewById(R.id.presetStrictBtn);
+        if (presetRelaxedBtn != null) presetRelaxedBtn.setOnClickListener(v1 -> applyPreset("relaxed"));
+        if (presetNormalBtn != null) presetNormalBtn.setOnClickListener(v1 -> applyPreset("normal"));
+        if (presetStrictBtn != null) presetStrictBtn.setOnClickListener(v1 -> applyPreset("strict"));
+        applyPreset(FeaturePrefs.getDdosPreset(requireContext()));
         updateManualBlockLabel();
 
         if (autoRefreshSwitch != null) {
             autoRefreshSwitch.setChecked(true);
             autoRefreshSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
-                countdown = AUTO_REFRESH_SECONDS;
+                countdown = autoRefreshSeconds;
                 handler.removeCallbacks(autoTick);
                 if (isChecked) handler.postDelayed(autoTick, 1000);
             });
         }
 
         swipe.setOnRefreshListener(() -> {
-            countdown = AUTO_REFRESH_SECONDS;
+            countdown = autoRefreshSeconds;
             loadAll();
         });
 
@@ -441,6 +454,24 @@ public final class DdosFragment extends BaseAuthedFragment
         else manualBlockBtn.setText("Block selected");
     }
 
+    private void applyPreset(String preset) {
+        if (!isAdded()) return;
+        String p = preset == null ? "normal" : preset.trim().toLowerCase(Locale.US);
+        if (!p.equals("strict") && !p.equals("relaxed")) p = "normal";
+
+        if (p.equals("strict")) autoRefreshSeconds = 2;
+        else if (p.equals("relaxed")) autoRefreshSeconds = 10;
+        else autoRefreshSeconds = DEFAULT_AUTO_REFRESH_SECONDS;
+
+        countdown = autoRefreshSeconds;
+        FeaturePrefs.setDdosPreset(requireContext(), p);
+
+        if (presetRelaxedBtn != null) presetRelaxedBtn.setEnabled(!p.equals("relaxed"));
+        if (presetNormalBtn != null) presetNormalBtn.setEnabled(!p.equals("normal"));
+        if (presetStrictBtn != null) presetStrictBtn.setEnabled(!p.equals("strict"));
+        toast("Preset: " + p + " (" + autoRefreshSeconds + "s refresh)");
+    }
+
     private void showIpActions(String ip, boolean isBlocked) {
         if (!isAdded() || TextUtils.isEmpty(ip)) return;
 
@@ -528,7 +559,8 @@ public final class DdosFragment extends BaseAuthedFragment
                     return;
                 }
                 toast("Blocked " + ip);
-                countdown = AUTO_REFRESH_SECONDS;
+                countdown = autoRefreshSeconds;
+                AuditLog.write(requireContext(), store.getUsername(), "ddos.block", "ip=" + ip + ", duration=" + durationSeconds);
                 loadAll();
             }
 
@@ -560,7 +592,8 @@ public final class DdosFragment extends BaseAuthedFragment
                     return;
                 }
                 toast("Unblocked " + ip);
-                countdown = AUTO_REFRESH_SECONDS;
+                countdown = autoRefreshSeconds;
+                AuditLog.write(requireContext(), store.getUsername(), "ddos.unblock", "ip=" + ip);
                 loadAll();
             }
 
@@ -601,6 +634,10 @@ public final class DdosFragment extends BaseAuthedFragment
         blockedEmpty = null;
         topEmpty = null;
         recentEmpty = null;
+        manualBlockBtn = null;
+        presetRelaxedBtn = null;
+        presetNormalBtn = null;
+        presetStrictBtn = null;
         super.onDestroyView();
     }
 }

@@ -21,6 +21,7 @@ import com.sumit.virtuallabadmin.v29.R;
 import com.virtuallab.admin.api.ApiClient;
 import com.virtuallab.admin.api.ApiService;
 import com.virtuallab.admin.data.TokenStore;
+import com.virtuallab.admin.feature.AuditLog;
 import com.virtuallab.admin.model.ApiResponse;
 import com.virtuallab.admin.model.LoginRequest;
 import com.virtuallab.admin.model.LoginResponseData;
@@ -279,6 +280,7 @@ public final class LoginActivity extends AppCompatActivity {
         String role = data.admin != null ? data.admin.role : "";
         tokenStore.saveSession(data.token, uName, email, role);
         AppLockPrefs.markUnlockedNow(this);
+        AuditLog.write(this, uName, "auth.login_success", "role=" + role);
 
         startActivity(new Intent(LoginActivity.this, MainActivity.class));
         finish();

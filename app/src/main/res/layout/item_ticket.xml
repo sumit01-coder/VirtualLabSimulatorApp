@@ -86,6 +86,12 @@
                 android:orientation="vertical"
                 android:gravity="end">
 
+                <CheckBox
+                    android:id="@+id/selectBox"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="end" />
+
                 <TextView
                     android:id="@+id/statusChip"
                     android:layout_width="wrap_content"

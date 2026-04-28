@@ -41,6 +41,46 @@
                     android:textSize="12sp" />
             </LinearLayout>
 
+            <TextView
+                android:id="@+id/selectionText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text=""
+                android:textColor="@color/text_muted"
+                android:textSize="12sp"
+                android:layout_marginTop="4dp"
+                android:visibility="gone" />
+
+            <LinearLayout
+                android:id="@+id/bulkActionsRow"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="6dp"
+                android:visibility="gone">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/bulkCloseBtn"
+                    android:layout_width="0dp"
+                    android:layout_height="@dimen/btn_h_sm"
+                    android:layout_weight="1"
+                    android:text="Bulk Close"
+                    android:textColor="@android:color/white"
+                    style="@style/Widget.VirtualLab.Button.Small"
+                    app:backgroundTint="@color/success" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/bulkAssignBtn"
+                    android:layout_width="0dp"
+                    android:layout_height="@dimen/btn_h_sm"
+                    android:layout_weight="1"
+                    android:layout_marginStart="@dimen/space_sm"
+                    android:text="Assign / Note"
+                    android:textColor="@android:color/white"
+                    style="@style/Widget.VirtualLab.Button.Small"
+                    app:backgroundTint="@color/brand" />
+            </LinearLayout>
+
         <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

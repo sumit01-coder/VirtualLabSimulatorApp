@@ -3,6 +3,7 @@ package com.virtuallab.admin.ui.list;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.CheckBox;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -14,17 +15,21 @@ import com.sumit.virtuallabadmin.v29.R;
 import com.virtuallab.admin.model.Ticket;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 public final class TicketsAdapter extends RecyclerView.Adapter<TicketsAdapter.VH> {
     public interface Listener {
         void onResolve(Ticket ticket);
         void onOpen(Ticket ticket);
+        void onSelectionChanged(int count);
     }
 
     private final Listener listener;
     private final List<Ticket> items = new ArrayList<>();
+    private final Set<Integer> selectedIds = new HashSet<>();
 
     public TicketsAdapter(Listener listener) {
         this.listener = listener;
@@ -33,11 +38,27 @@ public final class TicketsAdapter extends RecyclerView.Adapter<TicketsAdapter.VH
     public void submit(List<Ticket> next) {
         items.clear();
         if (next != null) items.addAll(next);
+        selectedIds.clear();
+        listener.onSelectionChanged(0);
         notifyDataSetChanged();
     }
 
     public int getTotalCount() {
         return items.size();
+    }
+
+    public List<Ticket> getSelectedItems() {
+        List<Ticket> out = new ArrayList<>();
+        for (Ticket t : items) {
+            if (t != null && selectedIds.contains(t.id)) out.add(t);
+        }
+        return out;
+    }
+
+    public void clearSelection() {
+        selectedIds.clear();
+        listener.onSelectionChanged(0);
+        notifyDataSetChanged();
     }
 
     @NonNull
@@ -76,8 +97,20 @@ public final class TicketsAdapter extends RecyclerView.Adapter<TicketsAdapter.VH
         boolean canResolve = t.status != null && !t.status.equalsIgnoreCase("closed");
         h.resolve.setVisibility(canResolve ? View.VISIBLE : View.GONE);
         h.resolve.setOnClickListener(v -> listener.onResolve(t));
+        h.selectBox.setOnCheckedChangeListener(null);
+        h.selectBox.setChecked(selectedIds.contains(t.id));
+        h.selectBox.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (isChecked) selectedIds.add(t.id);
+            else selectedIds.remove(t.id);
+            listener.onSelectionChanged(selectedIds.size());
+        });
 
         h.itemView.setOnClickListener(v -> listener.onOpen(t));
+        h.itemView.setOnLongClickListener(v -> {
+            boolean checked = !h.selectBox.isChecked();
+            h.selectBox.setChecked(checked);
+            return true;
+        });
     }
 
     private static void applyStatusStyle(VH h, String statusRaw) {
@@ -124,6 +157,7 @@ public final class TicketsAdapter extends RecyclerView.Adapter<TicketsAdapter.VH
         final TextView statusChip;
         final TextView date;
         final MaterialButton resolve;
+        final CheckBox selectBox;
 
         VH(@NonNull View itemView) {
             super(itemView);
@@ -135,6 +169,7 @@ public final class TicketsAdapter extends RecyclerView.Adapter<TicketsAdapter.VH
             statusChip = itemView.findViewById(R.id.statusChip);
             date = itemView.findViewById(R.id.date);
             resolve = itemView.findViewById(R.id.resolveBtn);
+            selectBox = itemView.findViewById(R.id.selectBox);
         }
     }
 }
