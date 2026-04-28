@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    style="@style/Widget.VirtualLab.Card"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="@dimen/space_md">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="@dimen/space_lg">
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Admin Tools" android:textColor="@color/text_primary" android:textSize="18sp" android:textStyle="bold" />
+        <com.google.android.material.button.MaterialButton android:id="@+id/manageLabsBtn" style="@style/Widget.Material3.Button.OutlinedButton" android:layout_width="match_parent" android:layout_height="@dimen/btn_h" android:layout_marginTop="@dimen/space_md" android:text="Manage Labs" />
+        <com.google.android.material.button.MaterialButton android:id="@+id/manageDepartmentsBtn" style="@style/Widget.Material3.Button.OutlinedButton" android:layout_width="match_parent" android:layout_height="@dimen/btn_h" android:layout_marginTop="@dimen/space_sm" android:text="Manage Departments" />
+        <com.google.android.material.button.MaterialButton android:id="@+id/permissionsBtn" style="@style/Widget.Material3.Button.OutlinedButton" android:layout_width="match_parent" android:layout_height="@dimen/btn_h" android:layout_marginTop="@dimen/space_sm" android:text="System Logs / Permissions" />
+        <com.google.android.material.button.MaterialButton android:id="@+id/auditLogBtn" style="@style/Widget.Material3.Button.OutlinedButton" android:layout_width="match_parent" android:layout_height="@dimen/btn_h" android:layout_marginTop="@dimen/space_sm" android:text="Audit Log" />
+        <com.google.android.material.button.MaterialButton android:id="@+id/apiHealthBtn" style="@style/Widget.Material3.Button.OutlinedButton" android:layout_width="match_parent" android:layout_height="@dimen/btn_h" android:layout_marginTop="@dimen/space_sm" android:text="API Health" />
+        <com.google.android.material.button.MaterialButton android:id="@+id/analyticsBtn" style="@style/Widget.Material3.Button.OutlinedButton" android:layout_width="match_parent" android:layout_height="@dimen/btn_h" android:layout_marginTop="@dimen/space_sm" android:text="Analytics Trends" />
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

@@ -1,14 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Day (light) palette; overridden in values-night/ -->
-    <color name="bg_dark">#F8FAFC</color>
+    <color name="bg_dark">#F5F9FF</color>
     <color name="bg_surface">#FFFFFF</color>
-    <color name="stroke">#E2E8F0</color>
-    <color name="brand">#2563EB</color>
+    <color name="bg_surface_alt">#EEF4FF</color>
+    <color name="stroke">#D7E4FF</color>
+    <color name="brand">#0057FF</color>
+    <color name="brand_dark">#003CC5</color>
+    <color name="brand_light">#E6EEFF</color>
     <color name="text_primary">#0F172A</color>
-    <color name="text_muted">#475569</color>
-    <color name="success">#10B981</color>
+    <color name="text_muted">#64748B</color>
+    <color name="text_soft">#94A3B8</color>
+    <color name="success">#16A34A</color>
     <color name="warn">#F59E0B</color>
     <color name="danger">#EF4444</color>
+    <color name="drawer_bg_start">#0F3EB3</color>
+    <color name="drawer_bg_end">#032876</color>
+    <color name="topbar_blue">#0A56F0</color>
+    <color name="chip_blue_bg">#E7F0FF</color>
+    <color name="chip_green_bg">#EAF8EF</color>
+    <color name="chip_red_bg">#FDECEC</color>
+    <color name="chip_yellow_bg">#FFF5DB</color>
+    <color name="shadow_tint">#1A0A3B8F</color>
 </resources>
 

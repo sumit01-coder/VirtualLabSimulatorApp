@@ -10,17 +10,20 @@
         android:id="@+id/appBar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/bg_dark"
+        android:background="@drawable/bg_blue_header_gradient"
+        android:elevation="0dp"
         app:liftOnScroll="true">
 
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:paddingStart="4dp"
+            android:paddingEnd="4dp"
             android:theme="@style/ThemeOverlay.Material3.ActionBar"
             app:title="@string/app_name"
-            app:titleTextColor="@color/text_primary"
-            app:subtitleTextColor="@color/text_muted"
+            app:titleTextColor="@android:color/white"
+            app:subtitleTextColor="#D7E4FF"
             app:menu="@menu/main_toolbar_menu"
             app:popupTheme="@style/ThemeOverlay.Material3" />
     </com.google.android.material.appbar.AppBarLayout>
@@ -37,7 +40,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
-        android:background="@color/bg_surface"
+        android:background="@drawable/bg_bottom_nav"
         app:itemIconTint="@color/bottom_nav_colors"
         app:itemTextColor="@color/bottom_nav_colors"
         app:itemRippleColor="@color/stroke"

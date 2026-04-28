@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    style="@style/Widget.VirtualLab.Card"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="@dimen/space_md">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="@dimen/space_lg">
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Security" android:textColor="@color/text_primary" android:textSize="18sp" android:textStyle="bold" />
+        <com.google.android.material.switchmaterial.SwitchMaterial android:id="@+id/appLockSwitch" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="@dimen/space_md" android:text="App Lock - Enabled" android:textColor="@color/text_primary" />
+        <com.google.android.material.switchmaterial.SwitchMaterial android:id="@+id/admin2faSwitch" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Two-Factor Authentication - Enabled" android:textColor="@color/text_primary" />
+        <com.google.android.material.switchmaterial.SwitchMaterial android:id="@+id/maintenanceSwitch" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Maintenance Mode" android:textColor="@color/text_primary" />
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

@@ -4,64 +4,66 @@
     style="@style/Widget.VirtualLab.Card"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginBottom="@dimen/space_sm"
-    android:clickable="true"
-    android:focusable="true"
-    android:foreground="?attr/selectableItemBackground"
-    android:stateListAnimator="@animator/vl_press_state"
-    app:strokeColor="@color/stroke">
+    android:layout_marginBottom="@dimen/space_sm">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
+        android:orientation="horizontal"
         android:padding="@dimen/space_md">
 
-        <TextView
-            android:id="@+id/name"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Lab name"
-            android:textColor="@color/text_primary"
-            android:textStyle="bold"
-            android:textSize="16sp" />
+        <View
+            android:layout_width="72dp"
+            android:layout_height="72dp"
+            android:background="@drawable/bg_blue_header_gradient" />
 
-        <TextView
-            android:id="@+id/subject"
-            android:layout_width="match_parent"
+        <LinearLayout
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="Subject"
-            android:textColor="@color/text_muted"
-            android:textSize="12sp"
-            android:layout_marginTop="4dp" />
+            android:layout_marginStart="@dimen/space_md"
+            android:layout_weight="1"
+            android:orientation="vertical">
 
-        <TextView
-            android:id="@+id/topics"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Topics"
-            android:textColor="@color/text_primary"
-            android:textSize="12sp"
-            android:layout_marginTop="@dimen/space_xs"
-            android:maxLines="2" />
+            <TextView
+                android:id="@+id/name"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Digital Logic Lab"
+                android:textColor="@color/text_primary"
+                android:textSize="16sp"
+                android:textStyle="bold" />
 
-        <TextView
-            android:id="@+id/department"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Department"
-            android:textColor="@color/text_muted"
-            android:textSize="12sp"
-            android:layout_marginTop="@dimen/space_xs" />
+            <TextView
+                android:id="@+id/department"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="Computer Engineering"
+                android:textColor="@color/text_muted" />
 
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Tap to edit • Long-press to delete"
-            android:textColor="@color/text_muted"
-            android:textSize="11sp"
-            android:layout_marginTop="@dimen/space_sm" />
+            <TextView
+                android:id="@+id/subject"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:text="12 Practicals • Simulator Added"
+                android:textColor="@color/text_primary"
+                android:textSize="12sp" />
 
+            <TextView
+                android:id="@+id/topics"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:text="100% complete"
+                android:textColor="@color/brand"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <ImageView
+            android:layout_width="22dp"
+            android:layout_height="22dp"
+            android:src="@drawable/ic_more_vert_24" />
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>
-

@@ -16,37 +16,30 @@
             android:orientation="vertical"
             android:padding="@dimen/space_md">
 
-            <LinearLayout
+            <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical">
+                android:text="Labs"
+                android:textColor="@color/text_primary"
+                android:textSize="22sp"
+                android:textStyle="bold" />
 
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Labs"
-                    android:textSize="20sp"
-                    android:textStyle="bold"
-                    android:textColor="@color/text_primary"
-                    android:padding="@dimen/space_xs" />
-
-                <TextView
-                    android:id="@+id/countText"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text=""
-                    android:textColor="@color/text_muted"
-                    android:textSize="12sp" />
-            </LinearLayout>
+            <TextView
+                android:id="@+id/countText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:textColor="@color/text_muted"
+                android:textSize="13sp" />
 
             <com.google.android.material.textfield.TextInputLayout
+                style="@style/Widget.VirtualLab.TextInputLayout.Outlined"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Search lab, subject, topics…"
-                style="@style/Widget.VirtualLab.TextInputLayout.Outlined"
-                android:layout_marginTop="6dp">
+                android:layout_marginTop="@dimen/space_md"
+                android:hint="Search labs..."
+                app:startIconDrawable="@android:drawable/ic_menu_search"
+                app:startIconTint="@color/text_muted">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/searchInput"
@@ -58,11 +51,11 @@
 
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/deptFilterLayout"
+                style="@style/Widget.VirtualLab.TextInputLayout.Exposed"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Department"
                 android:layout_marginTop="@dimen/space_sm"
-                style="@style/Widget.VirtualLab.TextInputLayout.Exposed">
+                android:hint="Department">
 
                 <com.google.android.material.textfield.MaterialAutoCompleteTextView
                     android:id="@+id/deptFilterInput"
@@ -77,20 +70,19 @@
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
                 android:layout_weight="1"
-                android:layoutAnimation="@anim/vl_layout_fade_slide_in"
+                android:layout_marginTop="@dimen/space_sm"
                 android:clipToPadding="false"
-                android:layout_marginTop="@dimen/space_sm" />
-
+                android:paddingBottom="92dp" />
         </LinearLayout>
 
         <TextView
             android:id="@+id/emptyText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_gravity="center"
             android:text="No labs found"
             android:textColor="@color/text_muted"
-            android:visibility="gone"
-            android:layout_gravity="center" />
+            android:visibility="gone" />
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
             android:id="@+id/addFab"
@@ -98,11 +90,9 @@
             android:layout_height="wrap_content"
             android:layout_gravity="bottom|end"
             android:layout_margin="@dimen/space_lg"
-            app:srcCompat="@drawable/ic_add_24"
-            app:tint="@android:color/white"
+            android:contentDescription="Add lab"
             app:backgroundTint="@color/brand"
-            android:contentDescription="Add lab" />
-
+            app:srcCompat="@drawable/ic_add_24"
+            app:tint="@android:color/white" />
     </FrameLayout>
 </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
-

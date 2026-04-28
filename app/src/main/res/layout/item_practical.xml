@@ -1,45 +1,42 @@
 <?xml version="1.0" encoding="utf-8"?>
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    style="@style/Widget.VirtualLab.Card"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginBottom="10dp"
-    android:clickable="true"
-    android:focusable="true"
-    android:foreground="?attr/selectableItemBackground"
-    android:stateListAnimator="@animator/vl_press_state"
-    style="@style/Widget.VirtualLab.Card">
+    android:layout_marginBottom="@dimen/space_sm">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="14dp">
+        android:padding="@dimen/space_md">
 
         <TextView
             android:id="@+id/title"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Practical title"
+            android:text="Data Structures Lab"
             android:textColor="@color/text_primary"
-            android:textStyle="bold"
-            android:textSize="14sp" />
+            android:textSize="16sp"
+            android:textStyle="bold" />
 
         <TextView
             android:id="@+id/lab"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Lab name"
-            android:textColor="@color/text_muted"
-            android:layout_marginTop="4dp" />
+            android:layout_marginTop="4dp"
+            android:text="8 Practicals • Simulator Added"
+            android:textColor="@color/text_muted" />
 
         <TextView
             android:id="@+id/dept"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Department"
-            android:textColor="@color/text_muted"
+            android:layout_marginTop="6dp"
+            android:text="Computer Engineering"
+            android:textColor="@color/brand"
             android:textSize="12sp"
-            android:layout_marginTop="2dp" />
+            android:textStyle="bold" />
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>
