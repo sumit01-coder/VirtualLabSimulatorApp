@@ -18,8 +18,32 @@ if ($username === '' || $password === '') {
 }
 
 $admin = api_find_admin_by_username($pdo, $username);
+
+$ip = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+$rlFile = dirname(__DIR__) . '/cache/admin_rate_limit.json';
+$rlData = [];
+if (is_file($rlFile)) {
+    $raw = @file_get_contents($rlFile);
+    if ($raw) $rlData = json_decode($raw, true) ?: [];
+}
+$now = time();
+foreach ($rlData as $k => $v) {
+    if (!isset($v['time']) || ($now - $v['time']) > 900) unset($rlData[$k]);
+}
+$attempts = $rlData[$ip]['attempts'] ?? 0;
+if ($attempts >= 5) {
+    api_json_out(false, 'Too many failed login attempts. Please try again in 15 minutes.', null, 429);
+}
+
 if (!$admin || !api_verify_password($admin, $password)) {
+    $rlData[$ip] = ['attempts' => $attempts + 1, 'time' => $now];
+    @file_put_contents($rlFile, json_encode($rlData, JSON_UNESCAPED_SLASHES));
     api_json_out(false, 'Invalid credentials', null, 401);
+}
+
+if (isset($rlData[$ip])) {
+    unset($rlData[$ip]);
+    @file_put_contents($rlFile, json_encode($rlData, JSON_UNESCAPED_SLASHES));
 }
 
 $settings = api_settings_get($pdo);

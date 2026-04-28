@@ -163,6 +163,7 @@
                 </com.google.android.material.card.MaterialCardView>
             </GridLayout>
 
+
             <com.google.android.material.card.MaterialCardView
                 style="@style/Widget.VirtualLab.Card"
                 android:layout_width="match_parent"
@@ -186,24 +187,27 @@
                         android:textStyle="bold" />
 
                     <TextView
+                        android:id="@+id/healthServer"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="@dimen/space_sm"
-                        android:text="Server Online"
+                        android:text="Checking server..."
                         android:textColor="@color/text_primary" />
 
                     <TextView
+                        android:id="@+id/healthDb"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="6dp"
-                        android:text="Database Online"
+                        android:text="Checking database..."
                         android:textColor="@color/text_primary" />
 
                     <TextView
+                        android:id="@+id/healthApi"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="6dp"
-                        android:text="API Online"
+                        android:text="Checking API..."
                         android:textColor="@color/text_primary" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
@@ -230,11 +234,24 @@
                         android:textSize="18sp"
                         android:textStyle="bold" />
 
-                    <View
-                        android:layout_width="match_parent"
-                        android:layout_height="140dp"
-                        android:layout_marginTop="@dimen/space_md"
-                        android:background="@drawable/bg_search_box" />
+                    <TextView
+                        android:id="@+id/statNewUsersWeek"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_sm"
+                        android:text="Loading..."
+                        android:textColor="@color/text_muted"
+                        android:textSize="14sp" />
+
+                    <TextView
+                        android:id="@+id/statTotalUsersLabel"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text=""
+                        android:textColor="@color/success"
+                        android:textSize="28sp"
+                        android:textStyle="bold" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -255,24 +272,29 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Recent Tickets"
+                        android:text="Active Tickets"
                         android:textColor="@color/text_primary"
                         android:textSize="18sp"
                         android:textStyle="bold" />
 
                     <TextView
+                        android:id="@+id/statActiveTicketsDetail"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="@dimen/space_sm"
-                        android:text="TKT001  •  Login issue with simulator"
-                        android:textColor="@color/text_primary" />
+                        android:text="Loading..."
+                        android:textColor="@color/text_muted"
+                        android:textSize="14sp" />
 
                     <TextView
+                        android:id="@+id/statActiveTicketsBig"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="6dp"
-                        android:text="TKT002  •  Practical not loading"
-                        android:textColor="@color/text_primary" />
+                        android:layout_marginTop="4dp"
+                        android:text=""
+                        android:textColor="@color/warning"
+                        android:textSize="36sp"
+                        android:textStyle="bold" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
         </LinearLayout>

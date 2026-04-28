@@ -48,7 +48,7 @@
         <item name="strokeColor">@color/stroke</item>
         <item name="strokeWidth">1dp</item>
         <item name="cardCornerRadius">@dimen/radius_lg</item>
-        <item name="cardElevation">8dp</item>
+        <item name="cardElevation">2dp</item>
         <item name="cardUseCompatPadding">true</item>
     </style>
 
@@ -64,5 +64,17 @@
         <item name="android:textColor">@color/brand</item>
         <item name="android:textStyle">bold</item>
         <item name="android:textSize">12sp</item>
+    </style>
+
+    <style name="Widget.VirtualLab.BottomNav.ActiveIndicator" parent="">
+        <item name="android:width">56dp</item>
+        <item name="android:height">32dp</item>
+        <item name="android:color">@color/nav_indicator</item>
+        <item name="shapeAppearance">@style/ShapeAppearance.VirtualLab.BottomNav.ActiveIndicator</item>
+    </style>
+
+    <style name="ShapeAppearance.VirtualLab.BottomNav.ActiveIndicator" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">16dp</item>
     </style>
 </resources>

@@ -1,25 +1,37 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="bg_dark">#F5F9FF</color>
+    <!-- Backgrounds -->
+    <color name="bg_dark">#F8FAFC</color>
     <color name="bg_surface">#FFFFFF</color>
-    <color name="bg_surface_alt">#EEF4FF</color>
-    <color name="stroke">#D7E4FF</color>
-    <color name="brand">#0057FF</color>
-    <color name="brand_dark">#003CC5</color>
-    <color name="brand_light">#E6EEFF</color>
-    <color name="text_primary">#0F172A</color>
-    <color name="text_muted">#64748B</color>
-    <color name="text_soft">#94A3B8</color>
-    <color name="success">#16A34A</color>
-    <color name="warn">#F59E0B</color>
-    <color name="danger">#EF4444</color>
-    <color name="drawer_bg_start">#0F3EB3</color>
-    <color name="drawer_bg_end">#032876</color>
-    <color name="topbar_blue">#0A56F0</color>
-    <color name="chip_blue_bg">#E7F0FF</color>
-    <color name="chip_green_bg">#EAF8EF</color>
-    <color name="chip_red_bg">#FDECEC</color>
-    <color name="chip_yellow_bg">#FFF5DB</color>
-    <color name="shadow_tint">#1A0A3B8F</color>
-</resources>
+    <color name="bg_surface_alt">#F1F5F9</color>
+    <color name="stroke">#E2E8F0</color>
 
+    <!-- Brand (Premium Indigo) -->
+    <color name="brand">#4F46E5</color>
+    <color name="brand_dark">#3730A3</color>
+    <color name="brand_light">#EEF2FF</color>
+
+    <!-- Typography -->
+    <color name="text_primary">#0F172A</color>
+    <color name="text_muted">#475569</color>
+    <color name="text_soft">#94A3B8</color>
+
+    <!-- Status -->
+    <color name="success">#059669</color>
+    <color name="warn">#D97706</color>
+    <color name="danger">#DC2626</color>
+
+    <!-- Gradients -->
+    <color name="drawer_bg_start">#312E81</color>
+    <color name="drawer_bg_end">#1E1B4B</color>
+    <color name="topbar_blue">#4338CA</color>
+
+    <!-- Chips -->
+    <color name="chip_blue_bg">#E0E7FF</color>
+    <color name="chip_green_bg">#D1FAE5</color>
+    <color name="chip_red_bg">#FEE2E2</color>
+    <color name="chip_yellow_bg">#FEF3C7</color>
+
+    <color name="shadow_tint">#1A0F172A</color>
+    <color name="nav_indicator">#E9E7FF</color>
+</resources>

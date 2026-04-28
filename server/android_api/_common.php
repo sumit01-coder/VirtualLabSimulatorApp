@@ -26,8 +26,18 @@ function api_json_out(bool $status, string $message, $data = null, int $httpStat
         ddos_json_out($status, $message, $data, $httpStatus);
     }
 
+    $meta = [
+        'timestamp' => time(),
+        'request_id' => bin2hex(random_bytes(8))
+    ];
+
     http_response_code($httpStatus);
-    echo json_encode(['status' => $status, 'message' => $message, 'data' => $data], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+    echo json_encode([
+        'status' => $status, 
+        'message' => $message, 
+        'data' => $data,
+        'meta' => $meta
+    ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
     exit;
 }
 
