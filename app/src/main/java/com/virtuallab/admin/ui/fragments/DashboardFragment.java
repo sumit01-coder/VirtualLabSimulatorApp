@@ -8,14 +8,21 @@ import android.content.Context;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.Button;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.content.Intent;
+import com.virtuallab.admin.ui.MainActivity;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
+import androidx.core.graphics.Insets;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
-import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.card.MaterialCardView;
+import com.google.android.material.switchmaterial.SwitchMaterial;
 import com.sumit.virtuallabadmin.v29.R;
 import com.virtuallab.admin.api.ApiClient;
 import com.virtuallab.admin.api.ApiService;
@@ -27,6 +34,8 @@ import com.virtuallab.admin.ui.LoginActivity;
 import com.virtuallab.admin.ui.LabsActivity;
 import com.virtuallab.admin.ui.UsersActivity;
 import com.virtuallab.admin.ui.DepartmentsActivity;
+import com.virtuallab.admin.ui.ApiHealthActivity;
+import com.virtuallab.admin.ui.ThemePrefs;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -47,11 +56,11 @@ public final class DashboardFragment extends BaseAuthedFragment {
     private TextView tickets;
 
     // Card containers
-    private MaterialCardView cardDepartments;
     private MaterialCardView cardLabs;
     private MaterialCardView cardPracticals;
     private MaterialCardView cardUsers;
-    private MaterialCardView cardLetters;
+    private MaterialCardView cardSecurity;
+    private MaterialCardView cardApiHealth;
     private MaterialCardView cardTickets;
 
     // Extended real-data views
@@ -62,12 +71,40 @@ public final class DashboardFragment extends BaseAuthedFragment {
     private TextView statTotalUsersLabel;
     private TextView statActiveTicketsDetail;
     private TextView statActiveTicketsBig;
+    private TextView statUsersFeatured;
+    private TextView statUsersTrendFeatured;
+    private Button filterTodayBtn;
+    private Button filterWeekBtn;
+    private Button filterMonthBtn;
+    private Button actionAddUserBtn;
+    private Button actionCreateLabBtn;
+    private Button actionReportsBtn;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View v = inflater.inflate(R.layout.fragment_dashboard, container, false);
         store = new TokenStore(requireContext());
         api = ApiClient.get(store);
+
+        View header = v.findViewById(R.id.dashboardHeader);
+        if (header != null) {
+            final int startLeft = header.getPaddingLeft();
+            final int startTop = header.getPaddingTop();
+            final int startRight = header.getPaddingRight();
+            final int startBottom = header.getPaddingBottom();
+            final int extraTop = getResources().getDimensionPixelSize(R.dimen.space_xl);
+            ViewCompat.setOnApplyWindowInsetsListener(header, (view, insets) -> {
+                Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+                view.setPadding(
+                        startLeft,
+                        startTop + bars.top + extraTop,
+                        startRight,
+                        startBottom
+                );
+                return insets;
+            });
+            ViewCompat.requestApplyInsets(header);
+        }
 
         swipe = v.findViewById(R.id.swipe);
         departments = v.findViewById(R.id.statDepartments);
@@ -77,12 +114,32 @@ public final class DashboardFragment extends BaseAuthedFragment {
         letters = v.findViewById(R.id.statLetters);
         tickets = v.findViewById(R.id.statTickets);
 
-        cardDepartments = v.findViewById(R.id.cardDepartments);
         cardLabs = v.findViewById(R.id.cardLabs);
         cardPracticals = v.findViewById(R.id.cardPracticals);
         cardUsers = v.findViewById(R.id.cardUsers);
-        cardLetters = v.findViewById(R.id.cardLetters);
+        cardSecurity = v.findViewById(R.id.cardSecurity);
+        cardApiHealth = v.findViewById(R.id.cardApiHealth);
         cardTickets = v.findViewById(R.id.cardTickets);
+
+        // Dynamic Header
+        TextView welcomeText = v.findViewById(R.id.welcomeText);
+        if (welcomeText != null && store.getUsername() != null) {
+            String name = store.getUsername();
+            // If it's an email, just take the part before @
+            if (name.contains("@")) {
+                name = name.split("@")[0];
+            }
+            // Capitalize first letter
+            if (name.length() > 0) {
+                name = name.substring(0, 1).toUpperCase() + name.substring(1);
+            }
+            welcomeText.setText("Hi, " + name + " \uD83D\uDC4B");
+        }
+
+        ImageView menuToggle = v.findViewById(R.id.menuToggle);
+        if (menuToggle != null) {
+            menuToggle.setOnClickListener(view -> showProfileMenuSheet());
+        }
 
         // Extended real-data views
         healthServer = v.findViewById(R.id.healthServer);
@@ -92,15 +149,21 @@ public final class DashboardFragment extends BaseAuthedFragment {
         statTotalUsersLabel = v.findViewById(R.id.statTotalUsersLabel);
         statActiveTicketsDetail = v.findViewById(R.id.statActiveTicketsDetail);
         statActiveTicketsBig = v.findViewById(R.id.statActiveTicketsBig);
+        statUsersFeatured = v.findViewById(R.id.statUsersFeatured);
+        statUsersTrendFeatured = v.findViewById(R.id.statUsersTrendFeatured);
+        filterTodayBtn = v.findViewById(R.id.filterTodayBtn);
+        filterWeekBtn = v.findViewById(R.id.filterWeekBtn);
+        filterMonthBtn = v.findViewById(R.id.filterMonthBtn);
+        actionAddUserBtn = v.findViewById(R.id.actionAddUserBtn);
+        actionCreateLabBtn = v.findViewById(R.id.actionCreateLabBtn);
+        actionReportsBtn = v.findViewById(R.id.actionReportsBtn);
 
         wireClicks();
 
-        Button logoutBtn = v.findViewById(R.id.logoutBtn);
-        logoutBtn.setOnClickListener(view -> {
-            store.clear();
-            startActivity(new Intent(getContext(), LoginActivity.class));
-            if (getActivity() != null) getActivity().finish();
-        });
+        Button profileBtn = v.findViewById(R.id.profileBtn);
+        if (profileBtn != null) {
+            profileBtn.setOnClickListener(view -> showProfileMenuSheet());
+        }
 
         swipe.setOnRefreshListener(this::load);
         load();
@@ -120,8 +183,27 @@ public final class DashboardFragment extends BaseAuthedFragment {
         if (cardUsers != null) {
             cardUsers.setOnClickListener(v -> startActivity(new Intent(requireContext(), UsersActivity.class)));
         }
-        if (cardDepartments != null) {
-            cardDepartments.setOnClickListener(v -> {
+        if (actionAddUserBtn != null) {
+            actionAddUserBtn.setOnClickListener(v -> startActivity(new Intent(requireContext(), UsersActivity.class)));
+        }
+        if (actionCreateLabBtn != null) {
+            actionCreateLabBtn.setOnClickListener(v -> startActivity(new Intent(requireContext(), LabsActivity.class)));
+        }
+        if (actionReportsBtn != null) {
+            actionReportsBtn.setOnClickListener(v -> toastSoon("Reports module is coming soon."));
+        }
+        if (filterTodayBtn != null) {
+            filterTodayBtn.setOnClickListener(v -> updateTimeFilter("today"));
+        }
+        if (filterWeekBtn != null) {
+            filterWeekBtn.setOnClickListener(v -> updateTimeFilter("week"));
+        }
+        if (filterMonthBtn != null) {
+            filterMonthBtn.setOnClickListener(v -> updateTimeFilter("month"));
+        }
+        // Departments card (5th card, currently named cardSecurity in layout)
+        if (cardSecurity != null) {
+            cardSecurity.setOnClickListener(v -> {
                 if (store != null && "super_admin".equalsIgnoreCase(store.getRole())) {
                     startActivity(new Intent(requireContext(), DepartmentsActivity.class));
                 } else {
@@ -129,23 +211,143 @@ public final class DashboardFragment extends BaseAuthedFragment {
                 }
             });
         }
-        if (cardLetters != null) {
-            cardLetters.setOnClickListener(v -> toastSoon("Letters module is coming soon."));
+        // Letters card (6th card, currently named cardApiHealth in layout)
+        if (cardApiHealth != null) {
+            cardApiHealth.setOnClickListener(v -> toastSoon("Letters module is coming soon."));
         }
     }
 
     private void selectBottomNav(int itemId) {
         if (!isAdded() || getActivity() == null) return;
-        View nav = getActivity().findViewById(R.id.bottomNav);
-        if (nav instanceof BottomNavigationView) {
-            ((BottomNavigationView) nav).setSelectedItemId(itemId);
+        if (getActivity() instanceof MainActivity) {
+            ((MainActivity) getActivity()).selectBottomNav(itemId);
         }
+    }
+
+    private void showProfileMenuSheet() {
+        if (!isAdded() || getContext() == null) return;
+        BottomSheetDialog sheet = new BottomSheetDialog(requireContext());
+        View content = LayoutInflater.from(requireContext()).inflate(R.layout.bottom_sheet_profile_menu, null, false);
+        sheet.setContentView(content);
+
+        TextView profileName = content.findViewById(R.id.profileNameText);
+        TextView profileRole = content.findViewById(R.id.profileRoleText);
+        TextView avatar = content.findViewById(R.id.profileAvatarText);
+        LinearLayout menuProfile = content.findViewById(R.id.menuProfile);
+        LinearLayout menuSettings = content.findViewById(R.id.menuSettings);
+        LinearLayout menuHelp = content.findViewById(R.id.menuHelp);
+        LinearLayout menuLogout = content.findViewById(R.id.menuLogout);
+        SwitchMaterial darkModeSwitch = content.findViewById(R.id.darkModeSwitch);
+
+        String username = store != null ? store.getUsername() : "Admin";
+        String role = store != null ? store.getRole() : "admin";
+        if (username == null || username.trim().isEmpty()) username = "Admin";
+        if (role == null || role.trim().isEmpty()) role = "admin";
+
+        profileName.setText(username);
+        profileRole.setText(role);
+        avatar.setText(username.substring(0, 1).toUpperCase());
+
+        menuProfile.setOnClickListener(v -> {
+            sheet.dismiss();
+            showProfileDetailsPanel();
+        });
+
+        menuSettings.setOnClickListener(v -> {
+            sheet.dismiss();
+            if (requireActivity() instanceof MainActivity) {
+                ((MainActivity) requireActivity()).selectBottomNav(R.id.nav_settings);
+            }
+        });
+
+        darkModeSwitch.setChecked(ThemePrefs.getMode(requireContext()) == ThemePrefs.MODE_DARK);
+        darkModeSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (isChecked) {
+                ThemePrefs.setMode(requireContext(), ThemePrefs.MODE_DARK);
+                darkModeSwitch.post(() -> darkModeSwitch.setChecked(false));
+                toastSoon("Dark mode is currently locked to light theme.");
+            } else {
+                ThemePrefs.setMode(requireContext(), ThemePrefs.MODE_LIGHT);
+            }
+        });
+
+        menuHelp.setOnClickListener(v -> {
+            sheet.dismiss();
+            toastSoon("Help & Support will be available soon.");
+        });
+
+        menuLogout.setOnClickListener(v -> {
+            sheet.dismiss();
+            if (store != null) store.clear();
+            startActivity(new Intent(getContext(), LoginActivity.class));
+            if (getActivity() != null) getActivity().finish();
+        });
+
+        sheet.show();
+        content.setAlpha(0f);
+        content.setTranslationY(22f);
+        content.animate().alpha(1f).translationY(0f).setDuration(180).start();
+    }
+
+    private void showProfileDetailsPanel() {
+        if (!isAdded() || getContext() == null) return;
+        BottomSheetDialog detailsSheet = new BottomSheetDialog(requireContext());
+        View detailsView = LayoutInflater.from(requireContext()).inflate(R.layout.bottom_sheet_profile_details, null, false);
+        detailsSheet.setContentView(detailsView);
+
+        TextView avatar = detailsView.findViewById(R.id.detailAvatarText);
+        TextView name = detailsView.findViewById(R.id.detailNameText);
+        TextView role = detailsView.findViewById(R.id.detailRoleText);
+        TextView usernameValue = detailsView.findViewById(R.id.detailUsernameValue);
+        TextView emailValue = detailsView.findViewById(R.id.detailEmailValue);
+        Button closeBtn = detailsView.findViewById(R.id.closeProfilePanelBtn);
+
+        String username = store != null ? store.getUsername() : "Admin";
+        String email = store != null ? store.getEmail() : "";
+        String userRole = store != null ? store.getRole() : "admin";
+        if (username == null || username.trim().isEmpty()) username = "Admin";
+        if (userRole == null || userRole.trim().isEmpty()) userRole = "admin";
+        if (email == null || email.trim().isEmpty()) email = "Not available";
+
+        avatar.setText(username.substring(0, 1).toUpperCase());
+        name.setText(username);
+        role.setText(userRole);
+        usernameValue.setText(username);
+        emailValue.setText(email);
+
+        closeBtn.setOnClickListener(v -> detailsSheet.dismiss());
+        detailsSheet.show();
     }
 
     private void toastSoon(String msg) {
         if (!isAdded()) return;
         Context ctx = getContext();
         if (ctx != null) Toast.makeText(ctx, msg, Toast.LENGTH_SHORT).show();
+    }
+
+    private void updateTimeFilter(String selected) {
+        if (getContext() == null) return;
+        int activeBg = getResources().getColor(R.color.brand, null);
+        int activeText = getResources().getColor(android.R.color.white, null);
+        int inactiveBg = getResources().getColor(android.R.color.white, null);
+        int inactiveText = getResources().getColor(R.color.text_primary, null);
+
+        if (filterTodayBtn != null) {
+            boolean on = "today".equals(selected);
+            filterTodayBtn.setBackgroundTintList(android.content.res.ColorStateList.valueOf(on ? activeBg : inactiveBg));
+            filterTodayBtn.setTextColor(on ? activeText : inactiveText);
+        }
+        if (filterWeekBtn != null) {
+            boolean on = "week".equals(selected);
+            filterWeekBtn.setBackgroundTintList(android.content.res.ColorStateList.valueOf(on ? activeBg : inactiveBg));
+            filterWeekBtn.setTextColor(on ? activeText : inactiveText);
+        }
+        if (filterMonthBtn != null) {
+            boolean on = "month".equals(selected);
+            filterMonthBtn.setBackgroundTintList(android.content.res.ColorStateList.valueOf(on ? activeBg : inactiveBg));
+            filterMonthBtn.setTextColor(on ? activeText : inactiveText);
+        }
+        toastSoon("Showing " + selected + " stats");
     }
 
     private void load() {
@@ -195,8 +397,13 @@ public final class DashboardFragment extends BaseAuthedFragment {
         if (labs != null) labs.setText(String.valueOf(s.labs));
         if (practicals != null) practicals.setText(String.valueOf(s.practicals));
         if (users != null) users.setText(String.valueOf(s.users));
+        if (statUsersFeatured != null) statUsersFeatured.setText(String.valueOf(s.users));
         if (letters != null) letters.setText(String.valueOf(s.verified_letters));
         if (tickets != null) tickets.setText(String.valueOf(s.active_tickets));
+        if (statUsersTrendFeatured != null) {
+            String trend = s.new_users_week >= 0 ? "▲ +" + s.new_users_week : "▼ " + s.new_users_week;
+            statUsersTrendFeatured.setText(trend + " this week");
+        }
 
         // System health (real from API)
         String online = "🟢 Online";

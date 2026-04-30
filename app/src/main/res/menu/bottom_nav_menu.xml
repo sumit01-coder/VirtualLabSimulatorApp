@@ -9,13 +9,13 @@
         android:title="Tickets"
         android:icon="@drawable/ic_tickets_24" />
     <item
+        android:id="@+id/nav_practicals"
+        android:title=""
+        android:icon="@drawable/ic_nav_placeholder_24" />
+    <item
         android:id="@+id/nav_settings"
         android:title="Settings"
         android:icon="@drawable/ic_settings_24" />
-    <item
-        android:id="@+id/nav_practicals"
-        android:title="Practicals"
-        android:icon="@drawable/ic_practicals_24" />
     <item
         android:id="@+id/nav_ddos"
         android:title="Security"

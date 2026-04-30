@@ -13,12 +13,15 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
+import com.google.android.material.bottomsheet.BottomSheetDialog;
+import com.google.android.material.button.MaterialButton;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
 import com.google.android.material.textfield.MaterialAutoCompleteTextView;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
@@ -51,8 +54,16 @@ public final class LabsFragment extends BaseAuthedFragment implements LabsAdapte
     private MaterialAutoCompleteTextView deptFilterInput;
     private TextView countText;
     private TextView emptyText;
-    private FloatingActionButton addFab;
+    private TextView totalLabsText;
+    private TextView departmentCountText;
+    private ExtendedFloatingActionButton addFab;
     private RecyclerView list;
+    private View filterBtn;
+    private TextView chipAll;
+    private TextView chipBiology;
+    private TextView chipChemistry;
+    private TextView chipPhysics;
+    private TextView chipIt;
 
     private LabsAdapter adapter;
     private final List<Lab> all = new ArrayList<>();
@@ -61,6 +72,7 @@ public final class LabsFragment extends BaseAuthedFragment implements LabsAdapte
     private final Map<String, Integer> deptNameToId = new HashMap<>();
     private boolean isSuperAdmin = false;
     private int selectedDeptId = 0;
+    private String selectedSubject = "all";
 
     private Call<ApiResponse<List<Department>>> departmentsCall;
     private Call<ApiResponse<List<Lab>>> labsCall;
@@ -80,15 +92,28 @@ public final class LabsFragment extends BaseAuthedFragment implements LabsAdapte
         deptFilterInput = v.findViewById(R.id.deptFilterInput);
         countText = v.findViewById(R.id.countText);
         emptyText = v.findViewById(R.id.emptyText);
+        totalLabsText = v.findViewById(R.id.totalLabsText);
+        departmentCountText = v.findViewById(R.id.departmentCountText);
         addFab = v.findViewById(R.id.addFab);
+        filterBtn = v.findViewById(R.id.filterBtn);
+        chipAll = v.findViewById(R.id.chipAll);
+        chipBiology = v.findViewById(R.id.chipBiology);
+        chipChemistry = v.findViewById(R.id.chipChemistry);
+        chipPhysics = v.findViewById(R.id.chipPhysics);
+        chipIt = v.findViewById(R.id.chipIt);
 
         list = v.findViewById(R.id.list);
         adapter = new LabsAdapter(this);
         list.setLayoutManager(new LinearLayoutManager(getContext()));
         list.setAdapter(adapter);
 
+        bindChipClicks();
+
         swipe.setOnRefreshListener(this::load);
         addFab.setOnClickListener(vv -> openEditDialog(null));
+        if (filterBtn != null) {
+            filterBtn.setOnClickListener(vv -> Toast.makeText(requireContext(), "Advanced filters coming soon", Toast.LENGTH_SHORT).show());
+        }
 
         if (!isSuperAdmin) {
             deptFilterLayout.setVisibility(View.GONE);
@@ -108,16 +133,19 @@ public final class LabsFragment extends BaseAuthedFragment implements LabsAdapte
     }
 
     private void load() {
-        if (departmentsCall != null) { departmentsCall.cancel(); departmentsCall = null; }
-        if (labsCall != null) { labsCall.cancel(); labsCall = null; }
+        if (departmentsCall != null) {
+            departmentsCall.cancel();
+            departmentsCall = null;
+        }
+        if (labsCall != null) {
+            labsCall.cancel();
+            labsCall = null;
+        }
 
         if (swipe != null) swipe.setRefreshing(true);
 
-        if (isSuperAdmin) {
-            loadDepartmentsThenLabs();
-        } else {
-            loadLabs();
-        }
+        if (isSuperAdmin) loadDepartmentsThenLabs();
+        else loadLabs();
     }
 
     private void loadDepartmentsThenLabs() {
@@ -126,15 +154,16 @@ public final class LabsFragment extends BaseAuthedFragment implements LabsAdapte
             @Override
             public void onResponse(Call<ApiResponse<List<Department>>> call, Response<ApiResponse<List<Department>>> response) {
                 if (!isAdded()) return;
-                if (response.code() == 401) { handleUnauthorized(); return; }
-
+                if (response.code() == 401) {
+                    handleUnauthorized();
+                    return;
+                }
                 if (response.code() == 404) {
                     Context ctx = getContext();
                     if (ctx != null) Toast.makeText(ctx, "Missing API: /android_api/departments.php (upload it to server)", Toast.LENGTH_LONG).show();
                     loadLabs();
                     return;
                 }
-
                 if (!response.isSuccessful() || response.body() == null || !response.body().status || response.body().data == null) {
                     loadLabs();
                     return;
@@ -148,8 +177,7 @@ public final class LabsFragment extends BaseAuthedFragment implements LabsAdapte
 
             @Override
             public void onFailure(Call<ApiResponse<List<Department>>> call, Throwable t) {
-                if (!isAdded()) return;
-                if (call.isCanceled()) return;
+                if (!isAdded() || call.isCanceled()) return;
                 loadLabs();
             }
         });
@@ -167,8 +195,8 @@ public final class LabsFragment extends BaseAuthedFragment implements LabsAdapte
             deptNameToId.put(name, d.id);
         }
 
-        ArrayAdapter<String> a = new ArrayAdapter<>(requireContext(), android.R.layout.simple_list_item_1, names);
-        deptFilterInput.setAdapter(a);
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(requireContext(), R.layout.item_dropdown_text, names);
+        deptFilterInput.setAdapter(adapter);
         if (deptFilterInput.getText() == null || deptFilterInput.getText().toString().trim().isEmpty()) {
             deptFilterInput.setText("All Departments", false);
             selectedDeptId = 0;
@@ -182,7 +210,10 @@ public final class LabsFragment extends BaseAuthedFragment implements LabsAdapte
     }
 
     private void loadLabs() {
-        if (labsCall != null) { labsCall.cancel(); labsCall = null; }
+        if (labsCall != null) {
+            labsCall.cancel();
+            labsCall = null;
+        }
 
         Integer deptId = null;
         if (isSuperAdmin && selectedDeptId > 0) deptId = selectedDeptId;
@@ -194,7 +225,10 @@ public final class LabsFragment extends BaseAuthedFragment implements LabsAdapte
                 if (!isAdded()) return;
                 if (swipe != null) swipe.setRefreshing(false);
 
-                if (response.code() == 401) { handleUnauthorized(); return; }
+                if (response.code() == 401) {
+                    handleUnauthorized();
+                    return;
+                }
                 if (response.code() == 404) {
                     Context ctx = getContext();
                     if (ctx != null) Toast.makeText(ctx, "Missing API: /android_api/labs.php (upload it to server)", Toast.LENGTH_LONG).show();
@@ -210,6 +244,7 @@ public final class LabsFragment extends BaseAuthedFragment implements LabsAdapte
                 all.addAll(response.body().data);
                 adapter.submit(all);
                 adapter.setQuery(searchInput.getText() != null ? searchInput.getText().toString() : "");
+                adapter.setSubjectFilter(selectedSubject);
                 if (list != null) list.scheduleLayoutAnimation();
                 updateCountAndEmpty();
             }
@@ -229,10 +264,54 @@ public final class LabsFragment extends BaseAuthedFragment implements LabsAdapte
         if (countText == null || emptyText == null) return;
         int total = adapter.getTotalCount();
         int shown = adapter.getVisibleCount();
+        if (totalLabsText != null) totalLabsText.setText(String.valueOf(total));
+        if (departmentCountText != null) departmentCountText.setText(String.valueOf(uniqueDepartmentCount()));
         if (total == 0) countText.setText("");
-        else if (shown == total) countText.setText(total + " labs");
-        else countText.setText(shown + " / " + total);
+        else if (shown == total) countText.setText(total + " labs available");
+        else countText.setText("Showing " + shown + " of " + total + " labs");
         emptyText.setVisibility(shown == 0 ? View.VISIBLE : View.GONE);
+    }
+
+    private int uniqueDepartmentCount() {
+        Map<String, Boolean> seen = new HashMap<>();
+        for (Lab lab : all) {
+            if (lab == null || lab.department_name == null || lab.department_name.trim().isEmpty()) continue;
+            seen.put(lab.department_name.trim().toLowerCase(), true);
+        }
+        return seen.size();
+    }
+
+    private void bindChipClicks() {
+        bindChip(chipAll, "all");
+        bindChip(chipBiology, "biology");
+        bindChip(chipChemistry, "chemistry");
+        bindChip(chipPhysics, "physics");
+        bindChip(chipIt, "it");
+        updateChipState();
+    }
+
+    private void bindChip(@Nullable TextView chip, @NonNull String filter) {
+        if (chip == null) return;
+        chip.setOnClickListener(v -> {
+            selectedSubject = filter;
+            adapter.setSubjectFilter(filter);
+            updateChipState();
+            updateCountAndEmpty();
+        });
+    }
+
+    private void updateChipState() {
+        updateChipView(chipAll, "all".equals(selectedSubject));
+        updateChipView(chipBiology, "biology".equals(selectedSubject));
+        updateChipView(chipChemistry, "chemistry".equals(selectedSubject));
+        updateChipView(chipPhysics, "physics".equals(selectedSubject));
+        updateChipView(chipIt, "it".equals(selectedSubject));
+    }
+
+    private void updateChipView(@Nullable TextView chip, boolean selected) {
+        if (chip == null) return;
+        chip.setBackgroundResource(selected ? R.drawable.bg_users_chip_active : R.drawable.bg_users_chip);
+        chip.setTextColor(ContextCompat.getColor(requireContext(), selected ? android.R.color.white : R.color.text_muted));
     }
 
     @Override
@@ -255,17 +334,25 @@ public final class LabsFragment extends BaseAuthedFragment implements LabsAdapte
         if (getContext() == null) return;
         if (isSuperAdmin && departments.isEmpty()) {
             Context ctx = getContext();
-            if (ctx != null) Toast.makeText(ctx, "Loading departments…", Toast.LENGTH_SHORT).show();
+            if (ctx != null) Toast.makeText(ctx, "Loading departments...", Toast.LENGTH_SHORT).show();
             return;
         }
-        View content = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_lab_edit, null, false);
 
+        View content = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_lab_edit, null, false);
+        BottomSheetDialog dialog = new BottomSheetDialog(requireContext());
+
+        TextView formTitle = content.findViewById(R.id.formTitle);
         TextInputLayout deptLayout = content.findViewById(R.id.departmentLayout);
         MaterialAutoCompleteTextView deptInput = content.findViewById(R.id.departmentInput);
         TextInputEditText nameInput = content.findViewById(R.id.nameInput);
         TextInputEditText subjectInput = content.findViewById(R.id.subjectInput);
         TextInputEditText topicsInput = content.findViewById(R.id.topicsInput);
         TextInputEditText descInput = content.findViewById(R.id.descInput);
+        MaterialButton deleteBtn = content.findViewById(R.id.deleteBtn);
+        MaterialButton cancelBtn = content.findViewById(R.id.cancelBtn);
+        MaterialButton saveBtn = content.findViewById(R.id.saveBtn);
+
+        if (formTitle != null) formTitle.setText(editing != null ? "Edit Lab" : "Add Lab");
 
         if (!isSuperAdmin) {
             deptLayout.setVisibility(View.GONE);
@@ -275,71 +362,74 @@ public final class LabsFragment extends BaseAuthedFragment implements LabsAdapte
                 if (d == null) continue;
                 if (d.name != null && !d.name.trim().isEmpty()) deptNames.add(d.name.trim());
             }
-            ArrayAdapter<String> a = new ArrayAdapter<>(requireContext(), android.R.layout.simple_list_item_1, deptNames);
-            deptInput.setAdapter(a);
+            ArrayAdapter<String> deptAdapter = new ArrayAdapter<>(requireContext(), R.layout.item_dropdown_text, deptNames);
+            deptInput.setAdapter(deptAdapter);
         }
 
         if (editing != null) {
-            nameInput.setText(editing.name != null ? editing.name : "");
-            subjectInput.setText(editing.subject != null ? editing.subject : "");
-            topicsInput.setText(editing.topics != null ? editing.topics : "");
-            descInput.setText(editing.description != null ? editing.description : "");
-            if (isSuperAdmin) {
-                String deptName = editing.department_name != null ? editing.department_name : "";
-                if (!deptName.trim().isEmpty()) deptInput.setText(deptName, false);
+            nameInput.setText(safe(editing.name));
+            subjectInput.setText(safe(editing.subject));
+            topicsInput.setText(safe(editing.topics));
+            descInput.setText(safe(editing.description));
+            if (isSuperAdmin && editing.department_name != null && !editing.department_name.trim().isEmpty()) {
+                deptInput.setText(editing.department_name, false);
             }
         }
 
-        MaterialAlertDialogBuilder b = new MaterialAlertDialogBuilder(requireContext())
-                .setTitle(editing != null ? "Edit Lab" : "Add Lab")
-                .setView(content)
-                .setNegativeButton("Cancel", null)
-                .setPositiveButton(editing != null ? "Save" : "Add", null);
+        if (deleteBtn != null) {
+            deleteBtn.setVisibility(editing != null ? View.VISIBLE : View.GONE);
+            deleteBtn.setOnClickListener(v -> {
+                dialog.dismiss();
+                if (editing != null) onDelete(editing);
+            });
+        }
+        if (cancelBtn != null) {
+            cancelBtn.setOnClickListener(v -> dialog.dismiss());
+        }
+        if (saveBtn != null) {
+            saveBtn.setText(editing != null ? "Save" : "Add");
+            saveBtn.setOnClickListener(v -> {
+                String name = nameInput.getText() != null ? nameInput.getText().toString().trim() : "";
+                String subject = subjectInput.getText() != null ? subjectInput.getText().toString().trim() : "";
+                String topics = topicsInput.getText() != null ? topicsInput.getText().toString().trim() : "";
+                String desc = descInput.getText() != null ? descInput.getText().toString().trim() : "";
 
-        if (editing != null) {
-            b.setNeutralButton("Delete", (d, which) -> onDelete(editing));
+                if (name.isEmpty()) {
+                    nameInput.setError("Required");
+                    return;
+                }
+
+                int deptId = 0;
+                if (isSuperAdmin) {
+                    String deptName = deptInput.getText() != null ? deptInput.getText().toString().trim() : "";
+                    if (deptName.isEmpty()) {
+                        deptLayout.setError("Select department");
+                        return;
+                    }
+                    deptLayout.setError(null);
+                    deptId = deptNameToId.containsKey(deptName) ? deptNameToId.get(deptName) : 0;
+                    if (deptId <= 0) {
+                        deptLayout.setError("Invalid department");
+                        return;
+                    }
+                }
+
+                if (editing == null) doAdd(name, subject, topics, desc, deptId, dialog);
+                else doEdit(editing, name, subject, topics, desc, deptId, dialog);
+            });
         }
 
-        androidx.appcompat.app.AlertDialog dialog = b.create();
-        dialog.setOnShowListener(d -> dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
-            String name = nameInput.getText() != null ? nameInput.getText().toString().trim() : "";
-            String subject = subjectInput.getText() != null ? subjectInput.getText().toString().trim() : "";
-            String topics = topicsInput.getText() != null ? topicsInput.getText().toString().trim() : "";
-            String desc = descInput.getText() != null ? descInput.getText().toString().trim() : "";
-
-            if (name.isEmpty()) {
-                nameInput.setError("Required");
-                return;
-            }
-
-            int deptId = 0;
-            if (isSuperAdmin) {
-                String deptName = deptInput.getText() != null ? deptInput.getText().toString().trim() : "";
-                if (deptName.isEmpty()) {
-                    deptLayout.setError("Select department");
-                    return;
-                }
-                deptLayout.setError(null);
-                deptId = deptNameToId.containsKey(deptName) ? deptNameToId.get(deptName) : 0;
-                if (deptId <= 0) {
-                    deptLayout.setError("Invalid department");
-                    return;
-                }
-            }
-
-            if (editing == null) doAdd(name, subject, topics, desc, deptId, dialog);
-            else doEdit(editing, name, subject, topics, desc, deptId, dialog);
-        }));
+        dialog.setContentView(content);
         dialog.show();
     }
 
-    private void doAdd(String name, String subject, String topics, String desc, int deptId, androidx.appcompat.app.AlertDialog dialog) {
+    private void doAdd(String name, String subject, String topics, String desc, int deptId, BottomSheetDialog dialog) {
         if (actionCall != null) actionCall.cancel();
         actionCall = api.labAction(LabActionRequest.add(name, subject, topics, desc, deptId));
         actionCall.enqueue(new ActionCallback(dialog, "Lab added"));
     }
 
-    private void doEdit(Lab editing, String name, String subject, String topics, String desc, int deptId, androidx.appcompat.app.AlertDialog dialog) {
+    private void doEdit(Lab editing, String name, String subject, String topics, String desc, int deptId, BottomSheetDialog dialog) {
         if (actionCall != null) actionCall.cancel();
         actionCall = api.labAction(LabActionRequest.edit(editing.id, name, subject, topics, desc, deptId));
         actionCall.enqueue(new ActionCallback(dialog, "Lab updated"));
@@ -352,7 +442,10 @@ public final class LabsFragment extends BaseAuthedFragment implements LabsAdapte
             @Override
             public void onResponse(Call<ApiResponse<Object>> call, Response<ApiResponse<Object>> response) {
                 if (!isAdded()) return;
-                if (response.code() == 401) { handleUnauthorized(); return; }
+                if (response.code() == 401) {
+                    handleUnauthorized();
+                    return;
+                }
                 if (!response.isSuccessful() || response.body() == null || !response.body().status) {
                     Context ctx = getContext();
                     if (ctx != null) Toast.makeText(ctx, "Failed to delete lab", Toast.LENGTH_SHORT).show();
@@ -365,8 +458,7 @@ public final class LabsFragment extends BaseAuthedFragment implements LabsAdapte
 
             @Override
             public void onFailure(Call<ApiResponse<Object>> call, Throwable t) {
-                if (!isAdded()) return;
-                if (call.isCanceled()) return;
+                if (!isAdded() || call.isCanceled()) return;
                 Context ctx = getContext();
                 if (ctx != null) Toast.makeText(ctx, "Network error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
             }
@@ -374,10 +466,10 @@ public final class LabsFragment extends BaseAuthedFragment implements LabsAdapte
     }
 
     private final class ActionCallback implements Callback<ApiResponse<Object>> {
-        private final androidx.appcompat.app.AlertDialog dialog;
+        private final BottomSheetDialog dialog;
         private final String successMsg;
 
-        ActionCallback(androidx.appcompat.app.AlertDialog dialog, String successMsg) {
+        ActionCallback(BottomSheetDialog dialog, String successMsg) {
             this.dialog = dialog;
             this.successMsg = successMsg;
         }
@@ -385,7 +477,10 @@ public final class LabsFragment extends BaseAuthedFragment implements LabsAdapte
         @Override
         public void onResponse(Call<ApiResponse<Object>> call, Response<ApiResponse<Object>> response) {
             if (!isAdded()) return;
-            if (response.code() == 401) { handleUnauthorized(); return; }
+            if (response.code() == 401) {
+                handleUnauthorized();
+                return;
+            }
             if (response.code() == 404) {
                 Context ctx = getContext();
                 if (ctx != null) Toast.makeText(ctx, "Missing API: /android_api/labs.php (upload it to server)", Toast.LENGTH_LONG).show();
@@ -404,8 +499,7 @@ public final class LabsFragment extends BaseAuthedFragment implements LabsAdapte
 
         @Override
         public void onFailure(Call<ApiResponse<Object>> call, Throwable t) {
-            if (!isAdded()) return;
-            if (call.isCanceled()) return;
+            if (!isAdded() || call.isCanceled()) return;
             Context ctx = getContext();
             if (ctx != null) Toast.makeText(ctx, "Network error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
         }
@@ -417,9 +511,18 @@ public final class LabsFragment extends BaseAuthedFragment implements LabsAdapte
 
     @Override
     public void onDestroyView() {
-        if (departmentsCall != null) { departmentsCall.cancel(); departmentsCall = null; }
-        if (labsCall != null) { labsCall.cancel(); labsCall = null; }
-        if (actionCall != null) { actionCall.cancel(); actionCall = null; }
+        if (departmentsCall != null) {
+            departmentsCall.cancel();
+            departmentsCall = null;
+        }
+        if (labsCall != null) {
+            labsCall.cancel();
+            labsCall = null;
+        }
+        if (actionCall != null) {
+            actionCall.cancel();
+            actionCall = null;
+        }
 
         swipe = null;
         searchInput = null;
@@ -427,8 +530,16 @@ public final class LabsFragment extends BaseAuthedFragment implements LabsAdapte
         deptFilterInput = null;
         countText = null;
         emptyText = null;
+        totalLabsText = null;
+        departmentCountText = null;
         addFab = null;
         list = null;
+        filterBtn = null;
+        chipAll = null;
+        chipBiology = null;
+        chipChemistry = null;
+        chipPhysics = null;
+        chipIt = null;
         super.onDestroyView();
     }
 }

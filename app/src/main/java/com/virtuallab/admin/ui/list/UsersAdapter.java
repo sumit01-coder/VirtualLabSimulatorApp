@@ -3,6 +3,7 @@ package com.virtuallab.admin.ui.list;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -25,6 +26,7 @@ public final class UsersAdapter extends RecyclerView.Adapter<UsersAdapter.VH> {
     private final List<User> visible = new ArrayList<>();
     private final OnUserClickListener listener;
     private String query = "";
+    private String filter = "all";
 
     public UsersAdapter(OnUserClickListener listener) {
         this.listener = listener;
@@ -38,6 +40,11 @@ public final class UsersAdapter extends RecyclerView.Adapter<UsersAdapter.VH> {
 
     public void setQuery(String q) {
         query = q != null ? q.trim() : "";
+        applyFilter();
+    }
+
+    public void setFilter(String next) {
+        filter = next != null ? next.trim().toLowerCase(Locale.US) : "all";
         applyFilter();
     }
 
@@ -68,10 +75,27 @@ public final class UsersAdapter extends RecyclerView.Adapter<UsersAdapter.VH> {
         } else {
             String needle = query.toLowerCase(Locale.US);
             for (User u : all) {
-                if (matches(u, needle)) visible.add(u);
+                if (matches(u, needle) && matchesFilter(u)) visible.add(u);
             }
         }
+        if (query.isEmpty()) {
+            List<User> filtered = new ArrayList<>();
+            for (User u : visible.isEmpty() ? all : visible) {
+                if (matchesFilter(u)) filtered.add(u);
+            }
+            visible.clear();
+            visible.addAll(filtered);
+        }
         notifyDataSetChanged();
+    }
+
+    private boolean matchesFilter(User u) {
+        if (u == null) return false;
+        if ("students".equals(filter)) return containsExact(u.role, "student");
+        if ("faculty".equals(filter)) return containsExact(u.role, "faculty");
+        if ("active".equals(filter)) return !isBlocked(u);
+        if ("inactive".equals(filter)) return isBlocked(u);
+        return true;
     }
 
     private static boolean matches(User u, String needle) {
@@ -91,6 +115,15 @@ public final class UsersAdapter extends RecyclerView.Adapter<UsersAdapter.VH> {
         return v.toLowerCase(Locale.US).contains(needle);
     }
 
+    private static boolean containsExact(String v, String needle) {
+        if (v == null) return false;
+        return v.toLowerCase(Locale.US).contains(needle);
+    }
+
+    private static boolean isBlocked(User u) {
+        return u != null && u.status != null && u.status.trim().equalsIgnoreCase("blocked");
+    }
+
     @NonNull
     @Override
     public VH onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -108,7 +141,7 @@ public final class UsersAdapter extends RecyclerView.Adapter<UsersAdapter.VH> {
         h.email.setText(email);
         h.uid.setText(u.unique_id != null ? u.unique_id : "");
 
-        boolean isBlocked = u.status != null && u.status.trim().equalsIgnoreCase("blocked");
+        boolean isBlocked = isBlocked(u);
         h.itemView.setAlpha(isBlocked ? 0.75f : 1.0f);
         h.statusDot.setBackgroundResource(isBlocked ? R.drawable.bg_status_dot_danger : R.drawable.bg_status_dot_success);
         h.statusChip.setBackgroundResource(isBlocked ? R.drawable.bg_chip_danger : R.drawable.bg_chip_success);
@@ -125,7 +158,7 @@ public final class UsersAdapter extends RecyclerView.Adapter<UsersAdapter.VH> {
 
         String meta = "";
         if (u.department != null) meta += u.department;
-        if (u.current_year != null && !u.current_year.isEmpty()) meta += " \u2022 Year " + u.current_year;
+        if (u.current_year != null && !u.current_year.isEmpty()) meta += meta.isEmpty() ? "Year " + u.current_year : " | Year " + u.current_year;
         h.meta.setText(meta);
 
         String extra = "";
@@ -156,6 +189,7 @@ public final class UsersAdapter extends RecyclerView.Adapter<UsersAdapter.VH> {
         final TextView uid;
         final View statusDot;
         final TextView statusChip;
+        final ImageView moreBtn;
 
         VH(@NonNull View itemView) {
             super(itemView);
@@ -167,6 +201,7 @@ public final class UsersAdapter extends RecyclerView.Adapter<UsersAdapter.VH> {
             uid = itemView.findViewById(R.id.uid);
             statusDot = itemView.findViewById(R.id.statusDot);
             statusChip = itemView.findViewById(R.id.statusChip);
+            moreBtn = itemView.findViewById(R.id.moreBtn);
         }
     }
 }

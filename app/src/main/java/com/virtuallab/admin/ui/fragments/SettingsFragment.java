@@ -69,6 +69,9 @@ public final class SettingsFragment extends BaseAuthedFragment {
     private TokenStore store;
     private SwipeRefreshLayout swipe;
     private TextView accessHint;
+    private TextView adminNameText;
+    private TextView adminRoleBadge;
+    private TextView adminInitialText;
     private SwitchMaterial maintenanceSwitch;
     private SwitchMaterial admin2faSwitch;
     private SwitchMaterial appLockSwitch;
@@ -112,6 +115,9 @@ public final class SettingsFragment extends BaseAuthedFragment {
 
         swipe = v.findViewById(R.id.swipe);
         accessHint = v.findViewById(R.id.accessHint);
+        adminNameText = v.findViewById(R.id.adminNameText);
+        adminRoleBadge = v.findViewById(R.id.adminRoleBadge);
+        adminInitialText = v.findViewById(R.id.adminInitialText);
         maintenanceSwitch = v.findViewById(R.id.maintenanceSwitch);
         admin2faSwitch = v.findViewById(R.id.admin2faSwitch);
         appLockSwitch = v.findViewById(R.id.appLockSwitch);
@@ -134,6 +140,7 @@ public final class SettingsFragment extends BaseAuthedFragment {
 
         appUpdatePrefs = requireContext().getSharedPreferences(APP_UPDATE_PREFS, Context.MODE_PRIVATE);
         appVersionText.setText("Current version: " + BuildConfig.VERSION_NAME + " (" + BuildConfig.VERSION_CODE + ")");
+        bindAdminHeader();
 
         if (themeModeBtn != null) {
             themeModeBtn.setText("Theme: " + ThemePrefs.getModeLabel(requireContext()));
@@ -557,6 +564,32 @@ public final class SettingsFragment extends BaseAuthedFragment {
                 .show();
     }
 
+    private void bindAdminHeader() {
+        String username = store.getUsername();
+        if (username == null || username.trim().isEmpty()) {
+            username = "Admin";
+        }
+        String displayName = username;
+        if (displayName.contains("@")) {
+            displayName = displayName.substring(0, displayName.indexOf('@'));
+        }
+        if (displayName.trim().isEmpty()) {
+            displayName = "Admin";
+        } else {
+            displayName = displayName.substring(0, 1).toUpperCase() + displayName.substring(1);
+        }
+
+        String role = store.getRole();
+        if (role == null || role.trim().isEmpty()) {
+            role = "admin";
+        }
+        String badge = role.replace('_', ' ').toUpperCase();
+
+        if (adminNameText != null) adminNameText.setText(displayName);
+        if (adminRoleBadge != null) adminRoleBadge.setText(badge);
+        if (adminInitialText != null) adminInitialText.setText(displayName.substring(0, 1).toUpperCase());
+    }
+
     @Override
     public void onDestroyView() {
         if (loadCall != null) { loadCall.cancel(); loadCall = null; }
@@ -564,6 +597,9 @@ public final class SettingsFragment extends BaseAuthedFragment {
         if (appUpdateCall != null) { appUpdateCall.cancel(); appUpdateCall = null; }
         swipe = null;
         accessHint = null;
+        adminNameText = null;
+        adminRoleBadge = null;
+        adminInitialText = null;
         maintenanceSwitch = null;
         admin2faSwitch = null;
         appLockSwitch = null;

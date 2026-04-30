@@ -3,13 +3,13 @@ package com.virtuallab.admin.ui.list;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.material.button.MaterialButton;
 import com.google.android.material.card.MaterialCardView;
 import com.sumit.virtuallabadmin.v29.R;
 import com.virtuallab.admin.model.DdosBlockedIp;
@@ -33,7 +33,9 @@ public final class DdosBlockedAdapter extends RecyclerView.Adapter<DdosBlockedAd
 
     public void submit(List<DdosBlockedIp> next) {
         items.clear();
-        if (next != null) items.addAll(next);
+        if (next != null) {
+            items.addAll(next);
+        }
         notifyDataSetChanged();
     }
 
@@ -42,31 +44,34 @@ public final class DdosBlockedAdapter extends RecyclerView.Adapter<DdosBlockedAd
         notifyDataSetChanged();
     }
 
-    
+    @NonNull
     @Override
-    public VH onCreateViewHolder( ViewGroup parent, int viewType) {
-        View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_blocked_ip, parent, false);
-        return new VH(v);
+    public VH onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_blocked_ip, parent, false);
+        return new VH(view);
     }
 
     @Override
-    public void onBindViewHolder( VH h, int position) {
-        DdosBlockedIp ip = items.get(position);
-        h.ip.setText(ip.ip != null ? ip.ip : "");
-        h.until.setText(ip.blocked_until != null ? ip.blocked_until : "");
-        h.reason.setText(ip.reason != null ? ip.reason : "");
+    public void onBindViewHolder(@NonNull VH holder, int position) {
+        DdosBlockedIp item = items.get(position);
+        holder.ip.setText(item.ip != null ? item.ip : "");
+        holder.until.setText(item.blocked_until != null ? item.blocked_until : "");
+        holder.reason.setText(item.reason != null ? item.reason : "");
 
-        boolean selected = ip.ip != null && ip.ip.equals(selectedIp);
-        h.card.setStrokeWidth(dp(h.card, selected ? 2 : 1));
-        h.card.setStrokeColor(ContextCompat.getColor(h.card.getContext(), selected ? R.color.brand : R.color.stroke));
+        boolean selected = item.ip != null && item.ip.equals(selectedIp);
+        holder.card.setStrokeWidth(dp(holder.card, selected ? 2 : 1));
+        holder.card.setStrokeColor(ContextCompat.getColor(holder.card.getContext(), selected ? R.color.ddos_blue : R.color.ddos_stroke));
 
-        h.unblock.setOnClickListener(v -> {
-            if (listener != null) listener.onUnblock(ip);
+        holder.unblock.setOnClickListener(v -> {
+            if (listener != null) {
+                listener.onUnblock(item);
+            }
         });
-        h.itemView.setOnClickListener(v -> {
-            if (listener == null) return;
-            if (ip.ip == null || ip.ip.trim().isEmpty()) return;
-            listener.onSelectBlockedIp(ip.ip.trim());
+        holder.itemView.setOnClickListener(v -> {
+            if (listener == null || item.ip == null || item.ip.trim().isEmpty()) {
+                return;
+            }
+            listener.onSelectBlockedIp(item.ip.trim());
         });
     }
 
@@ -80,7 +85,7 @@ public final class DdosBlockedAdapter extends RecyclerView.Adapter<DdosBlockedAd
         final TextView ip;
         final TextView until;
         final TextView reason;
-        final Button unblock;
+        final MaterialButton unblock;
 
         VH(@NonNull View itemView) {
             super(itemView);
@@ -92,9 +97,8 @@ public final class DdosBlockedAdapter extends RecyclerView.Adapter<DdosBlockedAd
         }
     }
 
-    private static int dp(View v, int dp) {
-        float density = v.getResources().getDisplayMetrics().density;
-        return Math.max(1, Math.round(dp * density));
+    private static int dp(View view, int value) {
+        float density = view.getResources().getDisplayMetrics().density;
+        return Math.max(1, Math.round(value * density));
     }
 }
-

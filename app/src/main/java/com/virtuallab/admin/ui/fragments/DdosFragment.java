@@ -3,6 +3,7 @@ package com.virtuallab.admin.ui.fragments;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
+import android.content.res.ColorStateList;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -15,12 +16,13 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
-import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.switchmaterial.SwitchMaterial;
 import com.google.android.material.textfield.TextInputEditText;
 import com.sumit.virtuallabadmin.v29.R;
@@ -56,11 +58,13 @@ public final class DdosFragment extends BaseAuthedFragment
     private static final String ARG_SELECTED_IP = "selected_ip";
 
     public static DdosFragment newInstance(@Nullable String selectedIp) {
-        DdosFragment f = new DdosFragment();
-        Bundle b = new Bundle();
-        if (selectedIp != null) b.putString(ARG_SELECTED_IP, selectedIp);
-        f.setArguments(b);
-        return f;
+        DdosFragment fragment = new DdosFragment();
+        Bundle args = new Bundle();
+        if (selectedIp != null) {
+            args.putString(ARG_SELECTED_IP, selectedIp);
+        }
+        fragment.setArguments(args);
+        return fragment;
     }
 
     private ApiService api;
@@ -69,6 +73,12 @@ public final class DdosFragment extends BaseAuthedFragment
     private SwipeRefreshLayout swipe;
     private SwitchMaterial autoRefreshSwitch;
     private TextView lastUpdated;
+    private View liveDot;
+    private TextView statusTitle;
+    private TextView statusMeta;
+    private TextView statusRiskBadge;
+    private TextView heroTrafficChip;
+    private TextView heroBlockedChip;
 
     private TextView statReq5m;
     private TextView statReq60s;
@@ -76,6 +86,8 @@ public final class DdosFragment extends BaseAuthedFragment
     private TextView statBlocked;
     private TextView statUnique;
     private TextView statErrors;
+    private TextView statErrorsTrend;
+    private TextView statUniqueTrend;
 
     private DdosRateChartView rateChart;
 
@@ -97,7 +109,6 @@ public final class DdosFragment extends BaseAuthedFragment
     private final Handler handler = new Handler(Looper.getMainLooper());
     private int autoRefreshSeconds = DEFAULT_AUTO_REFRESH_SECONDS;
     private int countdown = DEFAULT_AUTO_REFRESH_SECONDS;
-
     private int inFlightLoads = 0;
     private String selectedIp = "";
 
@@ -111,42 +122,51 @@ public final class DdosFragment extends BaseAuthedFragment
     private final Runnable autoTick = new Runnable() {
         @Override
         public void run() {
-            if (!isAdded()) return;
-            if (autoRefreshSwitch == null || !autoRefreshSwitch.isChecked()) return;
-
+            if (!isAdded() || autoRefreshSwitch == null || !autoRefreshSwitch.isChecked()) {
+                return;
+            }
             countdown--;
             if (countdown <= 0) {
                 countdown = autoRefreshSeconds;
                 loadAll();
             }
+            pulseLiveIndicator();
             handler.postDelayed(this, 1000);
         }
     };
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        View v = inflater.inflate(R.layout.fragment_ddos, container, false);
+        View view = inflater.inflate(R.layout.fragment_ddos, container, false);
         store = new TokenStore(requireContext());
         api = ApiClient.get(store);
 
-        swipe = v.findViewById(R.id.swipe);
-        autoRefreshSwitch = v.findViewById(R.id.autoRefreshSwitch);
-        lastUpdated = v.findViewById(R.id.lastUpdated);
+        swipe = view.findViewById(R.id.swipe);
+        autoRefreshSwitch = view.findViewById(R.id.autoRefreshSwitch);
+        lastUpdated = view.findViewById(R.id.lastUpdated);
+        liveDot = view.findViewById(R.id.liveDot);
+        statusTitle = view.findViewById(R.id.statusTitle);
+        statusMeta = view.findViewById(R.id.statusMeta);
+        statusRiskBadge = view.findViewById(R.id.statusRiskBadge);
+        heroTrafficChip = view.findViewById(R.id.heroTrafficChip);
+        heroBlockedChip = view.findViewById(R.id.heroBlockedChip);
 
-        statReq5m = v.findViewById(R.id.statReq5m);
-        statReq60s = v.findViewById(R.id.statReq60s);
-        statReq10s = v.findViewById(R.id.statReq10s);
-        statBlocked = v.findViewById(R.id.statBlocked);
-        statUnique = v.findViewById(R.id.statUnique);
-        statErrors = v.findViewById(R.id.statErrors);
-        rateChart = v.findViewById(R.id.rateChart);
+        statReq5m = view.findViewById(R.id.statReq5m);
+        statReq60s = view.findViewById(R.id.statReq60s);
+        statReq10s = view.findViewById(R.id.statReq10s);
+        statBlocked = view.findViewById(R.id.statBlocked);
+        statUnique = view.findViewById(R.id.statUnique);
+        statErrors = view.findViewById(R.id.statErrors);
+        statErrorsTrend = view.findViewById(R.id.statErrorsTrend);
+        statUniqueTrend = view.findViewById(R.id.statUniqueTrend);
+        rateChart = view.findViewById(R.id.rateChart);
 
-        blockedList = v.findViewById(R.id.blockedList);
-        topIpsList = v.findViewById(R.id.topIpsList);
-        recentList = v.findViewById(R.id.recentList);
-        blockedEmpty = v.findViewById(R.id.blockedEmpty);
-        topEmpty = v.findViewById(R.id.topEmpty);
-        recentEmpty = v.findViewById(R.id.recentEmpty);
+        blockedList = view.findViewById(R.id.blockedList);
+        topIpsList = view.findViewById(R.id.topIpsList);
+        recentList = view.findViewById(R.id.recentList);
+        blockedEmpty = view.findViewById(R.id.blockedEmpty);
+        topEmpty = view.findViewById(R.id.topEmpty);
+        recentEmpty = view.findViewById(R.id.recentEmpty);
 
         blockedAdapter = new DdosBlockedAdapter(this);
         topIpsAdapter = new DdosTopIpsAdapter(this);
@@ -166,14 +186,24 @@ public final class DdosFragment extends BaseAuthedFragment
             }
         }
 
-        manualBlockBtn = v.findViewById(R.id.blockBtn);
-        if (manualBlockBtn != null) manualBlockBtn.setOnClickListener(view -> showManualBlockDialog(selectedIp));
-        presetRelaxedBtn = v.findViewById(R.id.presetRelaxedBtn);
-        presetNormalBtn = v.findViewById(R.id.presetNormalBtn);
-        presetStrictBtn = v.findViewById(R.id.presetStrictBtn);
-        if (presetRelaxedBtn != null) presetRelaxedBtn.setOnClickListener(v1 -> applyPreset("relaxed"));
-        if (presetNormalBtn != null) presetNormalBtn.setOnClickListener(v1 -> applyPreset("normal"));
-        if (presetStrictBtn != null) presetStrictBtn.setOnClickListener(v1 -> applyPreset("strict"));
+        manualBlockBtn = view.findViewById(R.id.blockBtn);
+        if (manualBlockBtn != null) {
+            manualBlockBtn.setOnClickListener(v -> showManualBlockDialog(selectedIp));
+        }
+
+        presetRelaxedBtn = view.findViewById(R.id.presetRelaxedBtn);
+        presetNormalBtn = view.findViewById(R.id.presetNormalBtn);
+        presetStrictBtn = view.findViewById(R.id.presetStrictBtn);
+        if (presetRelaxedBtn != null) {
+            presetRelaxedBtn.setOnClickListener(v -> applyPreset("relaxed"));
+        }
+        if (presetNormalBtn != null) {
+            presetNormalBtn.setOnClickListener(v -> applyPreset("normal"));
+        }
+        if (presetStrictBtn != null) {
+            presetStrictBtn.setOnClickListener(v -> applyPreset("strict"));
+        }
+
         applyPreset(FeaturePrefs.getDdosPreset(requireContext()));
         updateManualBlockLabel();
 
@@ -182,7 +212,12 @@ public final class DdosFragment extends BaseAuthedFragment
             autoRefreshSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
                 countdown = autoRefreshSeconds;
                 handler.removeCallbacks(autoTick);
-                if (isChecked) handler.postDelayed(autoTick, 1000);
+                if (isChecked) {
+                    handler.postDelayed(autoTick, 1000);
+                } else if (liveDot != null) {
+                    liveDot.animate().cancel();
+                    liveDot.setAlpha(0.45f);
+                }
             });
         }
 
@@ -193,19 +228,23 @@ public final class DdosFragment extends BaseAuthedFragment
 
         loadAll();
         handler.postDelayed(autoTick, 1000);
-        return v;
+        return view;
     }
 
     private void loadAll() {
         cancelLoads();
-        if (swipe != null) swipe.setRefreshing(true);
+        if (swipe != null) {
+            swipe.setRefreshing(true);
+        }
         inFlightLoads = 5;
 
         overviewCall = api.ddosOverview("overview");
         overviewCall.enqueue(new Callback<ApiResponse<DdosOverview>>() {
             @Override
             public void onResponse(Call<ApiResponse<DdosOverview>> call, Response<ApiResponse<DdosOverview>> response) {
-                if (!isAdded()) return;
+                if (!isAdded()) {
+                    return;
+                }
                 finishOneLoad();
                 if (response.code() == 401) {
                     handleUnauthorized();
@@ -221,10 +260,13 @@ public final class DdosFragment extends BaseAuthedFragment
 
             @Override
             public void onFailure(Call<ApiResponse<DdosOverview>> call, Throwable t) {
-                if (!isAdded()) return;
+                if (!isAdded()) {
+                    return;
+                }
                 finishOneLoad();
-                if (call.isCanceled()) return;
-                toast("Network error: " + t.getMessage());
+                if (!call.isCanceled()) {
+                    toast("Network error: " + t.getMessage());
+                }
             }
         });
 
@@ -232,7 +274,9 @@ public final class DdosFragment extends BaseAuthedFragment
         blockedCall.enqueue(new Callback<ApiResponse<List<DdosBlockedIp>>>() {
             @Override
             public void onResponse(Call<ApiResponse<List<DdosBlockedIp>>> call, Response<ApiResponse<List<DdosBlockedIp>>> response) {
-                if (!isAdded()) return;
+                if (!isAdded()) {
+                    return;
+                }
                 finishOneLoad();
                 if (response.code() == 401) {
                     handleUnauthorized();
@@ -245,16 +289,23 @@ public final class DdosFragment extends BaseAuthedFragment
                 }
                 List<DdosBlockedIp> rows = body.data;
                 blockedAdapter.submit(rows);
-                if (blockedList != null) blockedList.scheduleLayoutAnimation();
-                if (blockedEmpty != null) blockedEmpty.setVisibility(rows == null || rows.isEmpty() ? View.VISIBLE : View.GONE);
+                if (blockedList != null) {
+                    blockedList.scheduleLayoutAnimation();
+                }
+                if (blockedEmpty != null) {
+                    blockedEmpty.setVisibility(rows == null || rows.isEmpty() ? View.VISIBLE : View.GONE);
+                }
             }
 
             @Override
             public void onFailure(Call<ApiResponse<List<DdosBlockedIp>>> call, Throwable t) {
-                if (!isAdded()) return;
+                if (!isAdded()) {
+                    return;
+                }
                 finishOneLoad();
-                if (call.isCanceled()) return;
-                toast("Network error: " + t.getMessage());
+                if (!call.isCanceled()) {
+                    toast("Network error: " + t.getMessage());
+                }
             }
         });
 
@@ -262,7 +313,9 @@ public final class DdosFragment extends BaseAuthedFragment
         topIpsCall.enqueue(new Callback<ApiResponse<List<DdosTopIp>>>() {
             @Override
             public void onResponse(Call<ApiResponse<List<DdosTopIp>>> call, Response<ApiResponse<List<DdosTopIp>>> response) {
-                if (!isAdded()) return;
+                if (!isAdded()) {
+                    return;
+                }
                 finishOneLoad();
                 if (response.code() == 401) {
                     handleUnauthorized();
@@ -275,16 +328,23 @@ public final class DdosFragment extends BaseAuthedFragment
                 }
                 List<DdosTopIp> rows = body.data;
                 topIpsAdapter.submit(rows);
-                if (topIpsList != null) topIpsList.scheduleLayoutAnimation();
-                if (topEmpty != null) topEmpty.setVisibility(rows == null || rows.isEmpty() ? View.VISIBLE : View.GONE);
+                if (topIpsList != null) {
+                    topIpsList.scheduleLayoutAnimation();
+                }
+                if (topEmpty != null) {
+                    topEmpty.setVisibility(rows == null || rows.isEmpty() ? View.VISIBLE : View.GONE);
+                }
             }
 
             @Override
             public void onFailure(Call<ApiResponse<List<DdosTopIp>>> call, Throwable t) {
-                if (!isAdded()) return;
+                if (!isAdded()) {
+                    return;
+                }
                 finishOneLoad();
-                if (call.isCanceled()) return;
-                toast("Network error: " + t.getMessage());
+                if (!call.isCanceled()) {
+                    toast("Network error: " + t.getMessage());
+                }
             }
         });
 
@@ -292,7 +352,9 @@ public final class DdosFragment extends BaseAuthedFragment
         recentCall.enqueue(new Callback<ApiResponse<List<DdosRecentRequest>>>() {
             @Override
             public void onResponse(Call<ApiResponse<List<DdosRecentRequest>>> call, Response<ApiResponse<List<DdosRecentRequest>>> response) {
-                if (!isAdded()) return;
+                if (!isAdded()) {
+                    return;
+                }
                 finishOneLoad();
                 if (response.code() == 401) {
                     handleUnauthorized();
@@ -305,16 +367,23 @@ public final class DdosFragment extends BaseAuthedFragment
                 }
                 List<DdosRecentRequest> rows = body.data;
                 recentAdapter.submit(rows);
-                if (recentList != null) recentList.scheduleLayoutAnimation();
-                if (recentEmpty != null) recentEmpty.setVisibility(rows == null || rows.isEmpty() ? View.VISIBLE : View.GONE);
+                if (recentList != null) {
+                    recentList.scheduleLayoutAnimation();
+                }
+                if (recentEmpty != null) {
+                    recentEmpty.setVisibility(rows == null || rows.isEmpty() ? View.VISIBLE : View.GONE);
+                }
             }
 
             @Override
             public void onFailure(Call<ApiResponse<List<DdosRecentRequest>>> call, Throwable t) {
-                if (!isAdded()) return;
+                if (!isAdded()) {
+                    return;
+                }
                 finishOneLoad();
-                if (call.isCanceled()) return;
-                toast("Network error: " + t.getMessage());
+                if (!call.isCanceled()) {
+                    toast("Network error: " + t.getMessage());
+                }
             }
         });
 
@@ -322,22 +391,25 @@ public final class DdosFragment extends BaseAuthedFragment
         rateCall.enqueue(new Callback<ApiResponse<List<DdosRatePoint>>>() {
             @Override
             public void onResponse(Call<ApiResponse<List<DdosRatePoint>>> call, Response<ApiResponse<List<DdosRatePoint>>> response) {
-                if (!isAdded()) return;
+                if (!isAdded()) {
+                    return;
+                }
                 finishOneLoad();
                 if (response.code() == 401) {
                     handleUnauthorized();
                     return;
                 }
                 ApiResponse<List<DdosRatePoint>> body = response.body();
-                if (!response.isSuccessful() || body == null || !body.status) {
-                    return;
+                if (response.isSuccessful() && body != null && body.status && rateChart != null) {
+                    rateChart.setPoints(body.data);
                 }
-                if (rateChart != null) rateChart.setPoints(body.data);
             }
 
             @Override
             public void onFailure(Call<ApiResponse<List<DdosRatePoint>>> call, Throwable t) {
-                if (!isAdded()) return;
+                if (!isAdded()) {
+                    return;
+                }
                 finishOneLoad();
             }
         });
@@ -345,42 +417,131 @@ public final class DdosFragment extends BaseAuthedFragment
 
     private void finishOneLoad() {
         inFlightLoads = Math.max(0, inFlightLoads - 1);
-        if (inFlightLoads == 0 && swipe != null) swipe.setRefreshing(false);
+        if (inFlightLoads == 0 && swipe != null) {
+            swipe.setRefreshing(false);
+        }
     }
 
-    private void bindOverview(DdosOverview o) {
-        if (o == null) return;
-        if (statReq5m != null) statReq5m.setText(String.valueOf(o.reqs_5min));
-        if (statReq60s != null) statReq60s.setText(String.valueOf(o.reqs_60s));
-        if (statReq10s != null) statReq10s.setText(String.valueOf(o.reqs_10s));
-        if (statBlocked != null) statBlocked.setText(String.valueOf(o.blocked_now));
-        if (statUnique != null) statUnique.setText(String.valueOf(o.unique_ips));
-        if (statErrors != null) statErrors.setText(String.valueOf(o.error_reqs));
+    private void bindOverview(DdosOverview overview) {
+        if (overview == null) {
+            return;
+        }
+        if (statReq5m != null) {
+            statReq5m.setText("5m window " + overview.reqs_5min);
+        }
+        if (statReq60s != null) {
+            statReq60s.setText(String.valueOf(overview.reqs_60s));
+        }
+        if (statReq10s != null) {
+            statReq10s.setText("10s burst " + overview.reqs_10s);
+        }
+        if (statBlocked != null) {
+            statBlocked.setText(String.valueOf(overview.blocked_now));
+        }
+        if (statUnique != null) {
+            statUnique.setText(String.valueOf(overview.unique_ips));
+        }
+        if (statErrors != null) {
+            statErrors.setText(String.valueOf(overview.error_reqs));
+        }
+        if (statErrorsTrend != null) {
+            statErrorsTrend.setText(overview.error_reqs > 0 ? "Errors rising" : "No edge errors");
+        }
+        if (statUniqueTrend != null) {
+            statUniqueTrend.setText(overview.unique_ips > 0 ? "Distributed traffic" : "No unique sources");
+        }
+        if (heroTrafficChip != null) {
+            heroTrafficChip.setText("60s rate " + overview.reqs_60s);
+        }
+        if (heroBlockedChip != null) {
+            heroBlockedChip.setText("Blocked " + overview.blocked_now);
+        }
 
-        long tsMs = o.ts > 0 ? (o.ts * 1000L) : System.currentTimeMillis();
-        SimpleDateFormat f = new SimpleDateFormat("HH:mm:ss", Locale.getDefault());
-        if (lastUpdated != null) lastUpdated.setText("Updated: " + f.format(tsMs));
+        long timestampMs = overview.ts > 0 ? overview.ts * 1000L : System.currentTimeMillis();
+        if (lastUpdated != null) {
+            SimpleDateFormat format = new SimpleDateFormat("HH:mm:ss", Locale.getDefault());
+            lastUpdated.setText("Last updated " + format.format(timestampMs));
+        }
+
+        int risk = resolveRisk(overview);
+        if (statusTitle != null) {
+            statusTitle.setText(risk >= 2 ? "Under Attack" : "Protected");
+        }
+        if (statusMeta != null) {
+            if (risk >= 2) {
+                statusMeta.setText("Traffic spikes and error bursts triggered active mitigation.");
+            } else if (risk == 1) {
+                statusMeta.setText("Elevated traffic detected. Monitoring and rate controls are active.");
+            } else {
+                statusMeta.setText("Traffic is stable and mitigation is active.");
+            }
+        }
+        if (statusRiskBadge != null) {
+            if (risk >= 2) {
+                statusRiskBadge.setText("High Risk");
+                statusRiskBadge.setBackgroundResource(R.drawable.bg_ddos_badge_danger);
+                statusRiskBadge.setTextColor(ContextCompat.getColor(requireContext(), R.color.ddos_red));
+            } else if (risk == 1) {
+                statusRiskBadge.setText("Medium Risk");
+                statusRiskBadge.setBackgroundResource(R.drawable.bg_ddos_badge_warn);
+                statusRiskBadge.setTextColor(ContextCompat.getColor(requireContext(), R.color.ddos_yellow));
+            } else {
+                statusRiskBadge.setText("Low Risk");
+                statusRiskBadge.setBackgroundResource(R.drawable.bg_ddos_badge_safe);
+                statusRiskBadge.setTextColor(ContextCompat.getColor(requireContext(), R.color.ddos_green));
+            }
+        }
+    }
+
+    private int resolveRisk(DdosOverview overview) {
+        boolean high = overview.error_reqs >= 20 || overview.blocked_now >= 10 || overview.reqs_60s >= 1200 || overview.reqs_10s >= 260;
+        boolean medium = overview.error_reqs >= 5 || overview.blocked_now >= 3 || overview.reqs_60s >= 400 || overview.reqs_10s >= 120;
+        if (high) {
+            return 2;
+        }
+        if (medium) {
+            return 1;
+        }
+        return 0;
+    }
+
+    private void pulseLiveIndicator() {
+        if (liveDot == null || autoRefreshSwitch == null || !autoRefreshSwitch.isChecked()) {
+            return;
+        }
+        liveDot.animate().cancel();
+        liveDot.animate().alpha(0.35f).setDuration(350L).withEndAction(() -> {
+            if (liveDot != null && autoRefreshSwitch != null && autoRefreshSwitch.isChecked()) {
+                liveDot.animate().alpha(1f).setDuration(350L).start();
+            }
+        }).start();
     }
 
     private void showManualBlockDialog(String prefillIp) {
-        if (!isAdded()) return;
+        if (!isAdded()) {
+            return;
+        }
         View content = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_block_ip, null, false);
         TextInputEditText ipInput = content.findViewById(R.id.ipInput);
         TextInputEditText durationInput = content.findViewById(R.id.durationInput);
-        if (durationInput != null) durationInput.setText("3600");
+        if (durationInput != null) {
+            durationInput.setText("3600");
+        }
         if (ipInput != null && prefillIp != null && !prefillIp.trim().isEmpty()) {
             ipInput.setText(prefillIp.trim());
-            if (ipInput.getText() != null) ipInput.setSelection(ipInput.getText().length());
+            if (ipInput.getText() != null) {
+                ipInput.setSelection(ipInput.getText().length());
+            }
         }
 
         new MaterialAlertDialogBuilder(requireContext())
                 .setTitle("Block IP")
                 .setView(content)
                 .setNegativeButton("Cancel", null)
-                .setPositiveButton("Block", (d, which) -> {
+                .setPositiveButton("Block", (dialog, which) -> {
                     String ip = ipInput != null && ipInput.getText() != null ? ipInput.getText().toString().trim() : "";
-                    String durRaw = durationInput != null && durationInput.getText() != null ? durationInput.getText().toString().trim() : "";
-                    int duration = parseDurationSeconds(durRaw);
+                    String durationRaw = durationInput != null && durationInput.getText() != null ? durationInput.getText().toString().trim() : "";
+                    int duration = parseDurationSeconds(durationRaw);
                     if (TextUtils.isEmpty(ip)) {
                         toast("Enter an IP address");
                         return;
@@ -399,123 +560,150 @@ public final class DdosFragment extends BaseAuthedFragment
                 duration = 3600;
             }
         }
-        if (duration <= 0) duration = 3600;
-        if (duration > 86400) duration = 86400;
+        if (duration <= 0) {
+            duration = 3600;
+        }
+        if (duration > 86400) {
+            duration = 86400;
+        }
         return duration;
     }
 
     @Override
     public void onQuickBlock(DdosTopIp ip) {
-        if (ip == null || TextUtils.isEmpty(ip.ip) || !isAdded()) return;
+        if (ip == null || TextUtils.isEmpty(ip.ip) || !isAdded()) {
+            return;
+        }
         new MaterialAlertDialogBuilder(requireContext())
                 .setTitle("Block " + ip.ip + "?")
                 .setMessage("Block this IP for 1 hour?")
                 .setNegativeButton("Cancel", null)
-                .setPositiveButton("Block", (d, which) -> doBlock(ip.ip, 3600))
+                .setPositiveButton("Block", (dialog, which) -> doBlock(ip.ip, 3600))
                 .show();
     }
 
     @Override
     public void onUnblock(DdosBlockedIp ip) {
-        if (ip == null || TextUtils.isEmpty(ip.ip) || !isAdded()) return;
+        if (ip == null || TextUtils.isEmpty(ip.ip) || !isAdded()) {
+            return;
+        }
         new MaterialAlertDialogBuilder(requireContext())
                 .setTitle("Unblock " + ip.ip + "?")
                 .setMessage("Remove this IP from the block list?")
                 .setNegativeButton("Cancel", null)
-                .setPositiveButton("Unblock", (d, which) -> doUnblock(ip.ip))
+                .setPositiveButton("Unblock", (dialog, which) -> doUnblock(ip.ip))
                 .show();
     }
 
     @Override
     public void onSelectIp(String ip) {
-        if (!isAdded()) return;
+        if (!isAdded()) {
+            return;
+        }
         setSelectedIp(ip);
         showIpActions(ip, false);
     }
 
     @Override
     public void onSelectBlockedIp(String ip) {
-        if (!isAdded()) return;
+        if (!isAdded()) {
+            return;
+        }
         setSelectedIp(ip);
         showIpActions(ip, true);
     }
 
     private void setSelectedIp(String ip) {
         selectedIp = ip != null ? ip : "";
-        if (topIpsAdapter != null) topIpsAdapter.setSelectedIp(selectedIp);
-        if (blockedAdapter != null) blockedAdapter.setSelectedIp(selectedIp);
-        if (recentAdapter != null) recentAdapter.setSelectedIp(selectedIp);
+        if (topIpsAdapter != null) {
+            topIpsAdapter.setSelectedIp(selectedIp);
+        }
+        if (blockedAdapter != null) {
+            blockedAdapter.setSelectedIp(selectedIp);
+        }
+        if (recentAdapter != null) {
+            recentAdapter.setSelectedIp(selectedIp);
+        }
         updateManualBlockLabel();
     }
 
     private void updateManualBlockLabel() {
-        if (manualBlockBtn == null) return;
-        if (selectedIp == null || selectedIp.trim().isEmpty()) manualBlockBtn.setText("Block IP");
-        else manualBlockBtn.setText("Block selected");
+        if (manualBlockBtn == null) {
+            return;
+        }
+        manualBlockBtn.setText(selectedIp == null || selectedIp.trim().isEmpty() ? "Block IP" : "Block selected");
     }
 
     private void applyPreset(String preset) {
-        if (!isAdded()) return;
-        String p = preset == null ? "normal" : preset.trim().toLowerCase(Locale.US);
-        if (!p.equals("strict") && !p.equals("relaxed")) p = "normal";
+        if (!isAdded()) {
+            return;
+        }
+        String normalized = preset == null ? "normal" : preset.trim().toLowerCase(Locale.US);
+        if (!"strict".equals(normalized) && !"relaxed".equals(normalized)) {
+            normalized = "normal";
+        }
 
-        if (p.equals("strict")) autoRefreshSeconds = 2;
-        else if (p.equals("relaxed")) autoRefreshSeconds = 10;
-        else autoRefreshSeconds = DEFAULT_AUTO_REFRESH_SECONDS;
-
+        if ("strict".equals(normalized)) {
+            autoRefreshSeconds = 2;
+        } else if ("relaxed".equals(normalized)) {
+            autoRefreshSeconds = 10;
+        } else {
+            autoRefreshSeconds = DEFAULT_AUTO_REFRESH_SECONDS;
+        }
         countdown = autoRefreshSeconds;
-        FeaturePrefs.setDdosPreset(requireContext(), p);
+        FeaturePrefs.setDdosPreset(requireContext(), normalized);
 
-        if (presetRelaxedBtn != null) presetRelaxedBtn.setEnabled(!p.equals("relaxed"));
-        if (presetNormalBtn != null) presetNormalBtn.setEnabled(!p.equals("normal"));
-        if (presetStrictBtn != null) presetStrictBtn.setEnabled(!p.equals("strict"));
-        toast("Preset: " + p + " (" + autoRefreshSeconds + "s refresh)");
+        updatePresetButton(presetRelaxedBtn, "relaxed".equals(normalized));
+        updatePresetButton(presetNormalBtn, "normal".equals(normalized));
+        updatePresetButton(presetStrictBtn, "strict".equals(normalized));
+    }
+
+    private void updatePresetButton(@Nullable MaterialButton button, boolean selected) {
+        if (button == null || !isAdded()) {
+            return;
+        }
+        button.setBackgroundResource(selected ? R.drawable.bg_ddos_segment_active : R.drawable.bg_ddos_segment_inactive);
+        button.setTextColor(ContextCompat.getColor(requireContext(), selected ? android.R.color.white : R.color.ddos_text_secondary));
+        button.setRippleColor(ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.ddos_blue)));
     }
 
     private void showIpActions(String ip, boolean isBlocked) {
-        if (!isAdded() || TextUtils.isEmpty(ip)) return;
+        if (!isAdded() || TextUtils.isEmpty(ip)) {
+            return;
+        }
 
         java.util.ArrayList<String> labels = new java.util.ArrayList<>();
         labels.add("Copy IP");
-        if (isBlocked) labels.add("Unblock");
+        if (isBlocked) {
+            labels.add("Unblock");
+        }
         labels.add("Block 10 minutes");
         labels.add("Block 1 hour");
         labels.add("Block 24 hours");
-        labels.add("Custom duration…");
-        if (selectedIp != null && !selectedIp.trim().isEmpty()) labels.add("Clear selection");
+        labels.add("Custom duration...");
+        if (selectedIp != null && !selectedIp.trim().isEmpty()) {
+            labels.add("Clear selection");
+        }
 
         String[] items = labels.toArray(new String[0]);
-
         new MaterialAlertDialogBuilder(requireContext())
                 .setTitle(ip)
-                .setItems(items, (d, which) -> {
+                .setItems(items, (dialog, which) -> {
                     String choice = items[which];
                     if ("Copy IP".equals(choice)) {
                         copyToClipboard(ip);
                         toast("Copied " + ip);
-                        return;
-                    }
-                    if ("Unblock".equals(choice)) {
+                    } else if ("Unblock".equals(choice)) {
                         confirmUnblock(ip);
-                        return;
-                    }
-                    if ("Block 10 minutes".equals(choice)) {
+                    } else if ("Block 10 minutes".equals(choice)) {
                         doBlock(ip, 600);
-                        return;
-                    }
-                    if ("Block 1 hour".equals(choice)) {
+                    } else if ("Block 1 hour".equals(choice)) {
                         doBlock(ip, 3600);
-                        return;
-                    }
-                    if ("Block 24 hours".equals(choice)) {
+                    } else if ("Block 24 hours".equals(choice)) {
                         doBlock(ip, 86400);
-                        return;
-                    }
-                    if ("Custom duration…".equals(choice)) {
+                    } else if ("Custom duration...".equals(choice)) {
                         showManualBlockDialog(ip);
-                        return;
-                    }
-                    if ("Clear selection".equals(choice)) {
+                    } else if ("Clear selection".equals(choice)) {
                         setSelectedIp("");
                     }
                 })
@@ -523,24 +711,31 @@ public final class DdosFragment extends BaseAuthedFragment
     }
 
     private void confirmUnblock(String ip) {
-        if (!isAdded() || TextUtils.isEmpty(ip)) return;
+        if (!isAdded() || TextUtils.isEmpty(ip)) {
+            return;
+        }
         new MaterialAlertDialogBuilder(requireContext())
                 .setTitle("Unblock " + ip + "?")
                 .setMessage("Remove this IP from the block list?")
                 .setNegativeButton("Cancel", null)
-                .setPositiveButton("Unblock", (d, which) -> doUnblock(ip))
+                .setPositiveButton("Unblock", (dialog, which) -> doUnblock(ip))
                 .show();
     }
 
     private void copyToClipboard(String ip) {
-        if (!isAdded() || getContext() == null) return;
-        ClipboardManager cm = (ClipboardManager) requireContext().getSystemService(Context.CLIPBOARD_SERVICE);
-        if (cm == null) return;
-        cm.setPrimaryClip(ClipData.newPlainText("IP", ip));
+        if (!isAdded() || getContext() == null) {
+            return;
+        }
+        ClipboardManager clipboardManager = (ClipboardManager) requireContext().getSystemService(Context.CLIPBOARD_SERVICE);
+        if (clipboardManager != null) {
+            clipboardManager.setPrimaryClip(ClipData.newPlainText("IP", ip));
+        }
     }
 
     private void doBlock(String ip, int durationSeconds) {
-        if (actionCall != null) actionCall.cancel();
+        if (actionCall != null) {
+            actionCall.cancel();
+        }
         Map<String, Object> body = new HashMap<>();
         body.put("ip", ip);
         body.put("duration", durationSeconds);
@@ -548,13 +743,15 @@ public final class DdosFragment extends BaseAuthedFragment
         actionCall.enqueue(new Callback<ApiResponse<Map<String, Object>>>() {
             @Override
             public void onResponse(Call<ApiResponse<Map<String, Object>>> call, Response<ApiResponse<Map<String, Object>>> response) {
-                if (!isAdded()) return;
+                if (!isAdded()) {
+                    return;
+                }
                 if (response.code() == 401) {
                     handleUnauthorized();
                     return;
                 }
-                ApiResponse<Map<String, Object>> b = response.body();
-                if (!response.isSuccessful() || b == null || !b.status) {
+                ApiResponse<Map<String, Object>> result = response.body();
+                if (!response.isSuccessful() || result == null || !result.status) {
                     toast("Failed to block IP");
                     return;
                 }
@@ -566,28 +763,33 @@ public final class DdosFragment extends BaseAuthedFragment
 
             @Override
             public void onFailure(Call<ApiResponse<Map<String, Object>>> call, Throwable t) {
-                if (!isAdded()) return;
-                if (call.isCanceled()) return;
+                if (!isAdded() || call.isCanceled()) {
+                    return;
+                }
                 toast("Network error: " + t.getMessage());
             }
         });
     }
 
     private void doUnblock(String ip) {
-        if (actionCall != null) actionCall.cancel();
+        if (actionCall != null) {
+            actionCall.cancel();
+        }
         Map<String, Object> body = new HashMap<>();
         body.put("ip", ip);
         actionCall = api.ddosUnblock(body);
         actionCall.enqueue(new Callback<ApiResponse<Map<String, Object>>>() {
             @Override
             public void onResponse(Call<ApiResponse<Map<String, Object>>> call, Response<ApiResponse<Map<String, Object>>> response) {
-                if (!isAdded()) return;
+                if (!isAdded()) {
+                    return;
+                }
                 if (response.code() == 401) {
                     handleUnauthorized();
                     return;
                 }
-                ApiResponse<Map<String, Object>> b = response.body();
-                if (!response.isSuccessful() || b == null || !b.status) {
+                ApiResponse<Map<String, Object>> result = response.body();
+                if (!response.isSuccessful() || result == null || !result.status) {
                     toast("Failed to unblock IP");
                     return;
                 }
@@ -599,34 +801,60 @@ public final class DdosFragment extends BaseAuthedFragment
 
             @Override
             public void onFailure(Call<ApiResponse<Map<String, Object>>> call, Throwable t) {
-                if (!isAdded()) return;
-                if (call.isCanceled()) return;
+                if (!isAdded() || call.isCanceled()) {
+                    return;
+                }
                 toast("Network error: " + t.getMessage());
             }
         });
     }
 
     private void toast(String msg) {
-        if (!isAdded()) return;
-        if (getContext() != null) Toast.makeText(getContext(), msg, Toast.LENGTH_SHORT).show();
+        if (isAdded() && getContext() != null) {
+            Toast.makeText(getContext(), msg, Toast.LENGTH_SHORT).show();
+        }
     }
 
     private void cancelLoads() {
-        if (overviewCall != null) { overviewCall.cancel(); overviewCall = null; }
-        if (blockedCall != null) { blockedCall.cancel(); blockedCall = null; }
-        if (topIpsCall != null) { topIpsCall.cancel(); topIpsCall = null; }
-        if (recentCall != null) { recentCall.cancel(); recentCall = null; }
-        if (rateCall != null) { rateCall.cancel(); rateCall = null; }
+        if (overviewCall != null) {
+            overviewCall.cancel();
+            overviewCall = null;
+        }
+        if (blockedCall != null) {
+            blockedCall.cancel();
+            blockedCall = null;
+        }
+        if (topIpsCall != null) {
+            topIpsCall.cancel();
+            topIpsCall = null;
+        }
+        if (recentCall != null) {
+            recentCall.cancel();
+            recentCall = null;
+        }
+        if (rateCall != null) {
+            rateCall.cancel();
+            rateCall = null;
+        }
     }
 
     @Override
     public void onDestroyView() {
         handler.removeCallbacks(autoTick);
         cancelLoads();
-        if (actionCall != null) { actionCall.cancel(); actionCall = null; }
+        if (actionCall != null) {
+            actionCall.cancel();
+            actionCall = null;
+        }
         swipe = null;
         autoRefreshSwitch = null;
         lastUpdated = null;
+        liveDot = null;
+        statusTitle = null;
+        statusMeta = null;
+        statusRiskBadge = null;
+        heroTrafficChip = null;
+        heroBlockedChip = null;
         rateChart = null;
         blockedList = null;
         topIpsList = null;
@@ -641,4 +869,3 @@ public final class DdosFragment extends BaseAuthedFragment
         super.onDestroyView();
     }
 }
-

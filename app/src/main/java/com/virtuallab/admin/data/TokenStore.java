@@ -56,7 +56,7 @@ public final class TokenStore {
                 .putString(KEY_ADMIN_USERNAME, username)
                 .putString(KEY_ADMIN_EMAIL, email)
                 .putString(KEY_ADMIN_ROLE, role)
-                .apply();
+                .commit();
     }
 
     public String getToken() {
@@ -69,7 +69,7 @@ public final class TokenStore {
     }
 
     public void clear() {
-        prefs.edit().clear().apply();
+        prefs.edit().clear().commit();
     }
 
     public String getUsername() {

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
@@ -10,7 +10,7 @@
         android:layout_height="46dp"
         android:background="@drawable/bg_chip_blue_soft"
         android:gravity="center"
-        android:text="A"
+        android:text="L"
         android:textColor="@color/brand"
         android:textStyle="bold" />
 
@@ -18,7 +18,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="@dimen/space_md"
-        android:text="API Health"
+        android:text="Letters"
         android:textColor="@color/text_muted"
         android:textStyle="bold" />
 
@@ -27,7 +27,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="6dp"
-        android:text="100%"
+        android:text="0"
         android:textColor="@color/text_primary"
         android:textSize="28sp"
         android:textStyle="bold" />
@@ -36,7 +36,8 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="4dp"
-        android:text="All systems running"
+        android:text="Verified letters"
         android:textColor="@color/success"
         android:textSize="12sp" />
 </LinearLayout>
+

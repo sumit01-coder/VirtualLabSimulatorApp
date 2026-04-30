@@ -38,54 +38,69 @@ public final class DdosTopIpsAdapter extends RecyclerView.Adapter<DdosTopIpsAdap
 
     public void submit(List<DdosTopIp> next) {
         items.clear();
-        if (next != null) items.addAll(next);
+        if (next != null) {
+            items.addAll(next);
+        }
         notifyDataSetChanged();
     }
 
     @NonNull
     @Override
     public VH onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_ddos_top_ip, parent, false);
-        return new VH(v);
+        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_ddos_top_ip, parent, false);
+        return new VH(view);
     }
 
     @Override
-    public void onBindViewHolder(@NonNull VH h, int position) {
-        DdosTopIp r = items.get(position);
-        h.ip.setText(r.ip != null ? r.ip : "");
-        h.total.setText(String.valueOf(r.total));
-        h.errors.setText(String.valueOf(r.errors));
-        h.endpoints.setText(String.valueOf(r.endpoints));
+    public void onBindViewHolder(@NonNull VH holder, int position) {
+        DdosTopIp item = items.get(position);
+        holder.rank.setText("#" + (position + 1));
+        holder.ip.setText(item.ip != null ? item.ip : "");
+        holder.total.setText(String.valueOf(item.total));
+        holder.errors.setText(String.valueOf(item.errors));
+        holder.endpoints.setText(item.endpoints + " endpoints");
 
-        boolean selected = r.ip != null && r.ip.equals(selectedIp);
-        h.card.setStrokeWidth(dp(h.card, selected ? 2 : 1));
-        h.card.setStrokeColor(ContextCompat.getColor(h.card.getContext(), selected ? R.color.brand : R.color.stroke));
+        boolean selected = item.ip != null && item.ip.equals(selectedIp);
+        holder.card.setStrokeWidth(dp(holder.card, selected ? 2 : 1));
+        holder.card.setStrokeColor(ContextCompat.getColor(holder.card.getContext(), selected ? R.color.ddos_blue : R.color.ddos_stroke));
 
-        String label = r.rf_label != null ? r.rf_label : "";
-        h.rf.setText(label);
-        int bg = R.drawable.bg_chip_muted;
-        if (r.rf_class == 2) bg = R.drawable.bg_chip_danger;
-        else if (r.rf_class == 1) bg = R.drawable.bg_chip_warn;
-        else if (r.rf_class == 0) bg = R.drawable.bg_chip_success;
-        h.rf.setBackgroundResource(bg);
+        int badgeRes = R.drawable.bg_ddos_badge_safe;
+        int badgeTextColor = R.color.ddos_green;
+        if (item.rf_class >= 2) {
+            badgeRes = R.drawable.bg_ddos_badge_danger;
+            badgeTextColor = R.color.ddos_red;
+        } else if (item.rf_class == 1) {
+            badgeRes = R.drawable.bg_ddos_badge_warn;
+            badgeTextColor = R.color.ddos_yellow;
+        }
+        holder.rf.setText(item.rf_label != null ? item.rf_label : "Low");
+        holder.rf.setBackgroundResource(badgeRes);
+        holder.rf.setTextColor(ContextCompat.getColor(holder.rf.getContext(), badgeTextColor));
 
-        h.block.setVisibility(View.VISIBLE);
-        boolean risky = r.rf_class >= 1;
-        h.block.setText(risky ? "Block 1h" : "Actions");
-        h.block.setIconResource(risky ? R.drawable.ic_security_24 : R.drawable.ic_security_24);
-        int tint = risky ? R.color.danger : R.color.brand;
-        h.block.setBackgroundTintList(ContextCompat.getColorStateList(h.block.getContext(), tint));
-        h.block.setOnClickListener(v -> {
-            if (listener == null) return;
-            if (r.ip == null || r.ip.trim().isEmpty()) return;
-            if (risky) listener.onQuickBlock(r);
-            else listener.onSelectIp(r.ip.trim());
+        boolean risky = item.rf_class >= 1;
+        holder.block.setText(risky ? "Block" : "Actions");
+        holder.block.setBackgroundTintList(ContextCompat.getColorStateList(holder.block.getContext(), risky ? R.color.ddos_red : R.color.ddos_indigo));
+        holder.block.setOnClickListener(v -> {
+            if (listener == null || item.ip == null || item.ip.trim().isEmpty()) {
+                return;
+            }
+            if (risky) {
+                listener.onQuickBlock(item);
+            } else {
+                listener.onSelectIp(item.ip.trim());
+            }
         });
-
-        h.itemView.setOnClickListener(v -> {
-            if (listener == null) return;
-            if (r.ip == null || r.ip.trim().isEmpty()) return;
-            listener.onSelectIp(r.ip.trim());
+        holder.analyze.setOnClickListener(v -> {
+            if (listener == null || item.ip == null || item.ip.trim().isEmpty()) {
+                return;
+            }
+            listener.onSelectIp(item.ip.trim());
+        });
+        holder.itemView.setOnClickListener(v -> {
+            if (listener == null || item.ip == null || item.ip.trim().isEmpty()) {
+                return;
+            }
+            listener.onSelectIp(item.ip.trim());
         });
     }
 
@@ -96,28 +111,31 @@ public final class DdosTopIpsAdapter extends RecyclerView.Adapter<DdosTopIpsAdap
 
     static final class VH extends RecyclerView.ViewHolder {
         final MaterialCardView card;
+        final TextView rank;
         final TextView ip;
         final TextView total;
         final TextView errors;
         final TextView endpoints;
         final TextView rf;
+        final MaterialButton analyze;
         final MaterialButton block;
 
         VH(@NonNull View itemView) {
             super(itemView);
             card = (MaterialCardView) itemView;
+            rank = itemView.findViewById(R.id.rank);
             ip = itemView.findViewById(R.id.ip);
             total = itemView.findViewById(R.id.total);
             errors = itemView.findViewById(R.id.errors);
             endpoints = itemView.findViewById(R.id.endpoints);
             rf = itemView.findViewById(R.id.rf);
+            analyze = itemView.findViewById(R.id.analyze);
             block = itemView.findViewById(R.id.block);
         }
     }
 
-    private static int dp(View v, int dp) {
-        float density = v.getResources().getDisplayMetrics().density;
-        return Math.max(1, Math.round(dp * density));
+    private static int dp(View view, int value) {
+        float density = view.getResources().getDisplayMetrics().density;
+        return Math.max(1, Math.round(value * density));
     }
 }
-

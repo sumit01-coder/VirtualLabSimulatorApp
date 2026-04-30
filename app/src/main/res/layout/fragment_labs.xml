@@ -14,40 +14,191 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:orientation="vertical"
-            android:padding="@dimen/space_md">
+            android:paddingStart="@dimen/space_md"
+            android:paddingTop="@dimen/space_md"
+            android:paddingEnd="@dimen/space_md">
 
-            <TextView
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Labs"
-                android:textColor="@color/text_primary"
-                android:textSize="22sp"
-                android:textStyle="bold" />
+                android:orientation="horizontal">
 
-            <TextView
-                android:id="@+id/countText"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:textColor="@color/text_muted"
-                android:textSize="13sp" />
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="10dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_users_stat_blue"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="14dp"
+                    android:paddingVertical="12dp">
 
-            <com.google.android.material.textfield.TextInputLayout
-                style="@style/Widget.VirtualLab.TextInputLayout.Outlined"
+                    <ImageView
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:src="@drawable/ic_labs_24"
+                        app:tint="@color/info" />
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="10dp"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Total Labs"
+                            android:textColor="@color/text_muted"
+                            android:textSize="11sp" />
+
+                        <TextView
+                            android:id="@+id/totalLabsText"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="0"
+                            android:textColor="@color/text_primary"
+                            android:textSize="18sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_users_stat_green"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="14dp"
+                    android:paddingVertical="12dp">
+
+                    <ImageView
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:src="@drawable/ic_departments_24"
+                        app:tint="@color/success" />
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="10dp"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Departments"
+                            android:textColor="@color/text_muted"
+                            android:textSize="11sp" />
+
+                        <TextView
+                            android:id="@+id/departmentCountText"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="0"
+                            android:textColor="@color/text_primary"
+                            android:textSize="18sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+                </LinearLayout>
+            </LinearLayout>
+
+            <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="56dp"
                 android:layout_marginTop="@dimen/space_md"
-                android:hint="Search labs..."
-                app:startIconDrawable="@android:drawable/ic_menu_search"
-                app:startIconTint="@color/text_muted">
+                android:background="@drawable/bg_users_search"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingStart="16dp"
+                android:paddingEnd="12dp">
+
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:src="@android:drawable/ic_menu_search"
+                    app:tint="@color/text_soft" />
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/searchInput"
-                    android:layout_width="match_parent"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
+                    android:layout_marginStart="10dp"
+                    android:layout_weight="1"
+                    android:background="@android:color/transparent"
+                    android:hint="Search labs..."
                     android:imeOptions="actionSearch"
-                    android:textColor="@color/text_primary" />
-            </com.google.android.material.textfield.TextInputLayout>
+                    android:inputType="text"
+                    android:padding="0dp"
+                    android:textColor="@color/text_primary"
+                    android:textColorHint="@color/text_soft" />
+
+                <ImageView
+                    android:id="@+id/filterBtn"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:background="@drawable/bg_users_filter_button"
+                    android:padding="8dp"
+                    android:src="@drawable/ic_filter_24"
+                    app:tint="@color/brand" />
+            </LinearLayout>
+
+            <HorizontalScrollView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_sm"
+                android:scrollbars="none">
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:id="@+id/chipAll"
+                        style="@style/Widget.VirtualLab.FilterChip"
+                        android:background="@drawable/bg_users_chip_active"
+                        android:paddingRight="16dp"
+                        android:text="All"
+                        android:textColor="@android:color/white" />
+
+                    <TextView
+                        android:id="@+id/chipBiology"
+                        style="@style/Widget.VirtualLab.FilterChip"
+                        android:background="@drawable/bg_users_chip"
+                        android:paddingRight="16dp"
+                        android:text="Biology"
+                        android:textColor="@color/text_muted" />
+
+                    <TextView
+                        android:id="@+id/chipChemistry"
+                        style="@style/Widget.VirtualLab.FilterChip"
+                        android:background="@drawable/bg_users_chip"
+                        android:paddingRight="16dp"
+                        android:text="Chemistry"
+                        android:textColor="@color/text_muted" />
+
+                    <TextView
+                        android:id="@+id/chipPhysics"
+                        style="@style/Widget.VirtualLab.FilterChip"
+                        android:background="@drawable/bg_users_chip"
+                        android:paddingRight="16dp"
+                        android:text="Physics"
+                        android:textColor="@color/text_muted" />
+
+                    <TextView
+                        android:id="@+id/chipIt"
+                        style="@style/Widget.VirtualLab.FilterChip"
+                        android:background="@drawable/bg_users_chip"
+                        android:paddingRight="16dp"
+                        android:text="IT"
+                        android:textColor="@color/text_muted" />
+                </LinearLayout>
+            </HorizontalScrollView>
 
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/deptFilterLayout"
@@ -65,14 +216,22 @@
                     android:textColor="@color/text_primary" />
             </com.google.android.material.textfield.TextInputLayout>
 
+            <TextView
+                android:id="@+id/countText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:textColor="@color/text_muted"
+                android:textSize="13sp" />
+
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/list"
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
                 android:layout_weight="1"
-                android:layout_marginTop="@dimen/space_sm"
+                android:layout_marginTop="10dp"
                 android:clipToPadding="false"
-                android:paddingBottom="92dp" />
+                android:paddingBottom="110dp" />
         </LinearLayout>
 
         <TextView
@@ -84,15 +243,17 @@
             android:textColor="@color/text_muted"
             android:visibility="gone" />
 
-        <com.google.android.material.floatingactionbutton.FloatingActionButton
+        <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
             android:id="@+id/addFab"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="bottom|end"
             android:layout_margin="@dimen/space_lg"
-            android:contentDescription="Add lab"
+            android:text="Add Lab"
+            android:textColor="@android:color/white"
             app:backgroundTint="@color/brand"
-            app:srcCompat="@drawable/ic_add_24"
-            app:tint="@android:color/white" />
+            app:elevation="12dp"
+            app:icon="@drawable/ic_add_24"
+            app:iconTint="@android:color/white" />
     </FrameLayout>
 </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>

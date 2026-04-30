@@ -19,7 +19,10 @@
     <!-- Status -->
     <color name="success">#059669</color>
     <color name="warn">#D97706</color>
+    <color name="warning">#D97706</color>
     <color name="danger">#DC2626</color>
+    <color name="error">#DC2626</color>
+    <color name="info">#2563EB</color>
 
     <!-- Gradients -->
     <color name="drawer_bg_start">#312E81</color>
@@ -34,4 +37,21 @@
 
     <color name="shadow_tint">#1A0F172A</color>
     <color name="nav_indicator">#E9E7FF</color>
+    <color name="settings_switch_thumb">#5B3DF5</color>
+    <color name="settings_switch_track">#A9BFFF</color>
+
+    <!-- DDoS dashboard -->
+    <color name="ddos_bg_start">#07111F</color>
+    <color name="ddos_bg_end">#0D172A</color>
+    <color name="ddos_surface">#141D34</color>
+    <color name="ddos_stroke">#263656</color>
+    <color name="ddos_text_primary">#F8FAFC</color>
+    <color name="ddos_text_secondary">#AFC0DF</color>
+    <color name="ddos_text_soft">#7F93B8</color>
+    <color name="ddos_blue">#3B82F6</color>
+    <color name="ddos_indigo">#6366F1</color>
+    <color name="ddos_cyan">#22D3EE</color>
+    <color name="ddos_green">#22C55E</color>
+    <color name="ddos_yellow">#F59E0B</color>
+    <color name="ddos_red">#F43F5E</color>
 </resources>

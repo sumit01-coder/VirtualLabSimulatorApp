@@ -92,9 +92,13 @@ public final class PracticalsAdapter extends RecyclerView.Adapter<PracticalsAdap
     @Override
     public void onBindViewHolder(@NonNull VH h, int position) {
         Practical p = visible.get(position);
-        h.title.setText(p.title != null ? p.title : "(no title)");
-        h.lab.setText(p.lab_name != null ? p.lab_name : "");
-        h.dept.setText(p.dept_name != null ? p.dept_name : "");
+        String title = p.title != null ? p.title.trim() : "";
+        String lab = p.lab_name != null ? p.lab_name.trim() : "";
+        String dept = p.dept_name != null ? p.dept_name.trim() : "";
+
+        h.title.setText(title.isEmpty() ? "Untitled Practical" : title);
+        h.lab.setText(lab.isEmpty() ? "Lab details will be available in preview" : lab);
+        h.dept.setText(dept.isEmpty() ? "General" : dept);
 
         h.itemView.setOnClickListener(v -> {
             if (listener != null) listener.onPracticalClick(p);

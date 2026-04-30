@@ -1,13 +1,71 @@
 <?xml version="1.0" encoding="utf-8"?>
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
-    style="@style/Widget.VirtualLab.Card"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginTop="@dimen/space_md">
-    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="@dimen/space_lg">
-        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Security" android:textColor="@color/text_primary" android:textSize="18sp" android:textStyle="bold" />
-        <com.google.android.material.switchmaterial.SwitchMaterial android:id="@+id/appLockSwitch" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="@dimen/space_md" android:text="App Lock - Enabled" android:textColor="@color/text_primary" />
-        <com.google.android.material.switchmaterial.SwitchMaterial android:id="@+id/admin2faSwitch" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Two-Factor Authentication - Enabled" android:textColor="@color/text_primary" />
-        <com.google.android.material.switchmaterial.SwitchMaterial android:id="@+id/maintenanceSwitch" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Maintenance Mode" android:textColor="@color/text_primary" />
+    android:layout_marginTop="@dimen/space_md"
+    app:cardBackgroundColor="@android:color/transparent"
+    app:cardCornerRadius="26dp"
+    app:cardElevation="0dp"
+    app:strokeColor="@android:color/transparent">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/bg_settings_glass_card"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Security"
+            android:textColor="@color/text_primary"
+            android:textSize="19sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:text="Secure the admin app with policy switches and stronger access rules."
+            android:textColor="@color/text_muted"
+            android:textSize="13sp" />
+
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/appLockSwitch"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:background="@drawable/bg_settings_row"
+            android:padding="16dp"
+            android:text="App Lock"
+            android:textColor="@color/text_primary"
+            app:thumbTint="@color/settings_switch_thumb"
+            app:trackTint="@color/settings_switch_track" />
+
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/admin2faSwitch"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/bg_settings_row"
+            android:padding="16dp"
+            android:text="Two-Factor Authentication"
+            android:textColor="@color/text_primary"
+            app:thumbTint="@color/settings_switch_thumb"
+            app:trackTint="@color/settings_switch_track" />
+
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/maintenanceSwitch"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/bg_settings_row"
+            android:padding="16dp"
+            android:text="Maintenance Mode"
+            android:textColor="@color/text_primary"
+            app:thumbTint="@color/settings_switch_thumb"
+            app:trackTint="@color/settings_switch_track" />
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>

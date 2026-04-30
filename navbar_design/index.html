@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Curved Notch Navbar - Premium UI</title>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #3B82F6 0%, #6366F1 100%);
+            --inactive-gray: #94A3B8;
+            --active-blue: #3B82F6;
+            --bg-glass: rgba(255, 255, 255, 0.9);
+            --shadow-soft: 0 -10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+            --fab-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.4), 0 4px 6px -4px rgba(59, 130, 246, 0.4);
+            --font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: #F1F5F9;
+            font-family: var(--font-family);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .phone-container {
+            width: 360px;
+            height: 800px;
+            background: #FFFFFF;
+            border-radius: 40px;
+            position: relative;
+            box-shadow: 0 50px 100px -20px rgba(0, 0, 0, 0.25);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            border: 8px solid #1E293B;
+        }
+
+        /* Mock Dashboard Content */
+        .dashboard {
+            flex: 1;
+            padding: 24px;
+            background: linear-gradient(180deg, #F8FAFC 0%, #FFFFFF 100%);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+        }
+
+        .user-profile {
+            width: 40px;
+            height: 40px;
+            background: #E2E8F0;
+            border-radius: 12px;
+            background-image: url('https://api.dicebear.com/7.x/avataaars/svg?seed=Admin');
+            background-size: cover;
+        }
+
+        .card {
+            background: #FFFFFF;
+            padding: 20px;
+            border-radius: 24px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            border: 1px solid #F1F5F9;
+        }
+
+        .card h3 {
+            font-size: 14px;
+            color: #64748B;
+            margin-bottom: 8px;
+        }
+
+        .card .value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #0F172A;
+        }
+
+        /* Navbar Styles */
+        .nav-wrapper {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 110px;
+            pointer-events: none;
+            display: flex;
+            justify-content: center;
+        }
+
+        /* The SVG background for the notch */
+        .nav-bg-svg {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 100px;
+            fill: white;
+            filter: drop-shadow(0 -10px 15px rgba(0,0,0,0.03));
+            pointer-events: auto;
+        }
+
+        .nav-content {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 80px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 0 10px 20px 10px;
+            pointer-events: auto;
+            z-index: 5;
+        }
+
+        .nav-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            z-index: 6;
+        }
+
+        .nav-item i {
+            width: 24px;
+            height: 24px;
+            color: var(--inactive-gray);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .nav-item span {
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--inactive-gray);
+            transition: color 0.3s ease;
+        }
+
+        .nav-item.active i {
+            color: var(--active-blue);
+            transform: scale(1.15) translateY(-2px);
+        }
+
+        .nav-item.active span {
+            color: var(--active-blue);
+        }
+
+        /* Badge Styles */
+        .badge {
+            position: absolute;
+            top: -5px;
+            right: 15px;
+            background: #EF4444;
+            color: white;
+            font-size: 9px;
+            font-weight: 800;
+            padding: 2px 5px;
+            border-radius: 10px;
+            border: 2px solid white;
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {transform: translateY(0);}
+            40% {transform: translateY(-3px);}
+            60% {transform: translateY(-2px);}
+        }
+
+        .status-dot {
+            position: absolute;
+            top: 2px;
+            right: 22px;
+            width: 8px;
+            height: 8px;
+            background: #10B981;
+            border-radius: 50%;
+            border: 2px solid white;
+        }
+
+        /* FAB Styles */
+        .fab-container {
+            position: absolute;
+            bottom: 42px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+        }
+
+        .fab {
+            width: 64px;
+            height: 64px;
+            background: var(--primary-gradient);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: var(--fab-shadow);
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border: 4px solid white;
+        }
+
+        .fab:hover {
+            transform: scale(1.1) translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(59, 130, 246, 0.5);
+        }
+
+        .fab i {
+            width: 28px;
+            height: 28px;
+            color: white;
+        }
+
+        /* Android Gesture Bar */
+        .gesture-bar {
+            position: absolute;
+            bottom: 8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 120px;
+            height: 4px;
+            background: #E2E8F0;
+            border-radius: 100px;
+            z-index: 10;
+        }
+
+        .nav-spacer {
+            width: 60px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="phone-container">
+        <!-- Mock Dashboard -->
+        <div class="dashboard">
+            <div class="header">
+                <div>
+                    <h2 style="font-size: 22px; font-weight: 800; color: #0F172A; letter-spacing: -0.5px;">Dashboard</h2>
+                    <p style="font-size: 13px; color: #64748B; font-weight: 500;">Virtual Lab Overview</p>
+                </div>
+                <div class="user-profile"></div>
+            </div>
+
+            <div class="card" style="margin-top: 10px;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <div>
+                        <h3>Pending Tickets</h3>
+                        <div class="value">24</div>
+                    </div>
+                    <div style="background: #FEE2E2; color: #EF4444; padding: 4px 8px; border-radius: 8px; font-size: 12px; font-weight: 700;">+12%</div>
+                </div>
+            </div>
+
+            <div class="card" style="background: #1E293B; border: none;">
+                <h3 style="color: #94A3B8;">System Uptime</h3>
+                <div class="value" style="color: #FFFFFF;">99.98%</div>
+                <div style="width: 100%; height: 4px; background: #334155; border-radius: 2px; margin-top: 12px; overflow: hidden;">
+                    <div style="width: 90%; height: 100%; background: #3B82F6; border-radius: 2px;"></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Latest Practical</h3>
+                <div style="display: flex; align-items: center; gap: 12px; margin-top: 8px;">
+                    <div style="width: 48px; height: 48px; background: #F1F5F9; border-radius: 12px; display: flex; justify-content: center; align-items: center;">
+                        <i data-lucide="beaker" style="color: #3B82F6; width: 24px;"></i>
+                    </div>
+                    <div>
+                        <p style="font-weight: 700; color: #0F172A; font-size: 15px;">Chemistry Lab A1</p>
+                        <p style="font-size: 12px; color: #64748B;">Started 5m ago</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navbar Wrapper -->
+        <div class="nav-wrapper">
+            <!-- Curved background SVG -->
+            <svg class="nav-bg-svg" viewBox="0 0 360 100" preserveAspectRatio="none">
+                <path d="M0,40 
+                         C0,20 10,10 30,10 
+                         L130,10 
+                         C145,10 150,15 155,25 
+                         C162,45 178,55 180,55 
+                         C182,55 198,45 205,25 
+                         C210,15 215,10 230,10 
+                         L330,10 
+                         C350,10 360,20 360,40 
+                         L360,100 
+                         L0,100 Z" />
+            </svg>
+
+            <!-- Nav Content -->
+            <div class="nav-content">
+                <div class="nav-item active" onclick="setActive(this)">
+                    <i data-lucide="layout-dashboard"></i>
+                    <span>Home</span>
+                </div>
+                <div class="nav-item" onclick="setActive(this)">
+                    <i data-lucide="ticket"></i>
+                    <span>Tickets</span>
+                    <div class="badge">5</div>
+                </div>
+                
+                <div class="nav-spacer"></div>
+
+                <div class="nav-item" onclick="setActive(this)">
+                    <i data-lucide="settings"></i>
+                    <span>Settings</span>
+                </div>
+                <div class="nav-item" onclick="setActive(this)">
+                    <i data-lucide="shield"></i>
+                    <span>Security</span>
+                    <div class="status-dot"></div>
+                </div>
+            </div>
+
+            <!-- FAB -->
+            <div class="fab-container">
+                <div class="fab" onclick="alert('Launching Practicals...')">
+                    <i data-lucide="flask-conical"></i>
+                </div>
+            </div>
+
+            <!-- Gesture Bar -->
+            <div class="gesture-bar"></div>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        function setActive(element) {
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+            element.classList.add('active');
+            
+            // Add slight scale animation on click
+            element.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+                element.style.transform = 'scale(1)';
+            }, 100);
+        }
+    </script>
+</body>
+</html>

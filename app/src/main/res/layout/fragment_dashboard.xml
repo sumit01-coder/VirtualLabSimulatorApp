@@ -19,6 +19,7 @@
             android:paddingBottom="@dimen/space_2xl">
 
             <LinearLayout
+                android:id="@+id/dashboardHeader"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:background="@drawable/bg_blue_header_gradient"
@@ -30,9 +31,13 @@
                 android:paddingBottom="28dp">
 
                 <ImageView
+                    android:id="@+id/menuToggle"
                     android:layout_width="22dp"
                     android:layout_height="22dp"
-                    android:src="@drawable/ic_menu_24" />
+                    android:src="@drawable/ic_menu_24"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:clickable="true"
+                    android:focusable="true" />
 
                 <LinearLayout
                     android:layout_width="0dp"
@@ -42,18 +47,21 @@
                     android:orientation="vertical">
 
                     <TextView
+                        android:id="@+id/welcomeText"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Welcome back, Sumit 👋"
+                        android:text="Hi there 👋"
                         android:textColor="@android:color/white"
-                        android:textSize="24sp"
-                        android:textStyle="bold" />
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:maxLines="1"
+                        android:ellipsize="end" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="4dp"
-                        android:text="Here's what's happening today."
+                        android:text="Dashboard Overview"
                         android:textColor="#D7E4FF"
                         android:textSize="14sp" />
                 </LinearLayout>
@@ -83,16 +91,110 @@
                 android:gravity="end">
 
                 <com.google.android.material.button.MaterialButton
-                    android:id="@+id/logoutBtn"
+                    android:id="@+id/profileBtn"
                     style="@style/Widget.VirtualLab.Button.Small"
                     android:layout_width="wrap_content"
                     android:layout_height="@dimen/btn_h_sm"
-                    android:text="Logout"
+                    android:text="My Profile"
                     android:textColor="@color/brand"
                     app:backgroundTint="@android:color/white"
-                    app:icon="@drawable/ic_logout_24"
+                    app:icon="@drawable/ic_person_24"
                     app:iconTint="@color/brand" />
             </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/timeFilterRow"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/space_md"
+                android:layout_marginTop="@dimen/space_sm"
+                android:layout_marginEnd="@dimen/space_md"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Time Filter"
+                    android:textColor="@color/text_muted"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/filterTodayBtn"
+                    style="@style/Widget.VirtualLab.Button.Small"
+                    android:layout_width="wrap_content"
+                    android:layout_height="@dimen/btn_h_sm"
+                    android:text="Today"
+                    android:textColor="@android:color/white"
+                    app:backgroundTint="@color/brand" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/filterWeekBtn"
+                    style="@style/Widget.VirtualLab.Button.Small"
+                    android:layout_width="wrap_content"
+                    android:layout_height="@dimen/btn_h_sm"
+                    android:layout_marginStart="8dp"
+                    android:text="Week"
+                    android:textColor="@color/text_primary"
+                    app:backgroundTint="@android:color/white" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/filterMonthBtn"
+                    style="@style/Widget.VirtualLab.Button.Small"
+                    android:layout_width="wrap_content"
+                    android:layout_height="@dimen/btn_h_sm"
+                    android:layout_marginStart="8dp"
+                    android:text="Month"
+                    android:textColor="@color/text_primary"
+                    app:backgroundTint="@android:color/white" />
+            </LinearLayout>
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardUsersFeatured"
+                style="@style/Widget.VirtualLab.Card"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/space_md"
+                android:layout_marginTop="@dimen/space_md"
+                android:layout_marginEnd="@dimen/space_md"
+                app:cardBackgroundColor="@color/brand">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="@dimen/space_lg">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Users"
+                        android:textColor="#DDE6FF"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/statUsersFeatured"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:text="0"
+                        android:textColor="@android:color/white"
+                        android:textSize="36sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/statUsersTrendFeatured"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="▲ +0.0% vs last period"
+                        android:textColor="#C8FAD6"
+                        android:textSize="12sp" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
 
             <GridLayout
                 android:layout_width="match_parent"
@@ -107,8 +209,11 @@
                     style="@style/Widget.VirtualLab.Card"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
+                    android:layout_row="0"
+                    android:layout_column="0"
                     android:layout_columnWeight="1"
                     android:layout_margin="6dp">
+
                     <include layout="@layout/item_dashboard_users" />
                 </com.google.android.material.card.MaterialCardView>
 
@@ -143,7 +248,7 @@
                 </com.google.android.material.card.MaterialCardView>
 
                 <com.google.android.material.card.MaterialCardView
-                    android:id="@+id/cardDepartments"
+                    android:id="@+id/cardSecurity"
                     style="@style/Widget.VirtualLab.Card"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -153,7 +258,7 @@
                 </com.google.android.material.card.MaterialCardView>
 
                 <com.google.android.material.card.MaterialCardView
-                    android:id="@+id/cardLetters"
+                    android:id="@+id/cardApiHealth"
                     style="@style/Widget.VirtualLab.Card"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -162,6 +267,75 @@
                     <include layout="@layout/item_dashboard_api" />
                 </com.google.android.material.card.MaterialCardView>
             </GridLayout>
+
+            <com.google.android.material.card.MaterialCardView
+                style="@style/Widget.VirtualLab.Card"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/space_md"
+                android:layout_marginTop="@dimen/space_md"
+                android:layout_marginEnd="@dimen/space_md">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="@dimen/space_lg">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Quick Actions"
+                        android:textColor="@color/text_primary"
+                        android:textSize="16sp"
+                        android:textStyle="bold" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_sm"
+                        android:orientation="horizontal">
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/actionAddUserBtn"
+                            style="@style/Widget.VirtualLab.Button.Small"
+                            android:layout_width="0dp"
+                            android:layout_height="@dimen/btn_h_sm"
+                            android:layout_weight="1"
+                            android:text="Add User"
+                            android:textColor="@android:color/white"
+                            app:backgroundTint="@color/brand"
+                            app:icon="@drawable/ic_add_24"
+                            app:iconTint="@android:color/white" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/actionCreateLabBtn"
+                            style="@style/Widget.VirtualLab.Button.Small"
+                            android:layout_width="0dp"
+                            android:layout_height="@dimen/btn_h_sm"
+                            android:layout_marginStart="8dp"
+                            android:layout_weight="1"
+                            android:text="Create Lab"
+                            android:textColor="@color/text_primary"
+                            app:backgroundTint="@android:color/white"
+                            app:icon="@drawable/ic_labs_24"
+                            app:iconTint="@color/brand" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/actionReportsBtn"
+                            style="@style/Widget.VirtualLab.Button.Small"
+                            android:layout_width="0dp"
+                            android:layout_height="@dimen/btn_h_sm"
+                            android:layout_marginStart="8dp"
+                            android:layout_weight="1"
+                            android:text="View Reports"
+                            android:textColor="@color/text_primary"
+                            app:backgroundTint="@android:color/white"
+                            app:icon="@drawable/ic_dashboard_24"
+                            app:iconTint="@color/brand" />
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
 
 
             <com.google.android.material.card.MaterialCardView

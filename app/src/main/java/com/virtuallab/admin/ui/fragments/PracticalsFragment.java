@@ -2,29 +2,37 @@ package com.virtuallab.admin.ui.fragments;
 
 import android.content.Context;
 import android.net.Uri;
-import android.os.Bundle;
 import android.os.Build;
+import android.os.Bundle;
 import android.text.Editable;
+import android.text.Html;
+import android.text.Spanned;
 import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ArrayAdapter;
-import android.widget.ImageView;
-import android.widget.TextView;
-import android.widget.Toast;
-import android.webkit.WebSettings;
+import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
+import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.widget.ArrayAdapter;
+import android.widget.FrameLayout;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.ProgressBar;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.bumptech.glide.Glide;
+import com.google.android.material.bottomsheet.BottomSheetBehavior;
+import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.textfield.MaterialAutoCompleteTextView;
@@ -92,7 +100,6 @@ public final class PracticalsFragment extends BaseAuthedFragment {
 
         swipe.setOnRefreshListener(this::load);
 
-        // Default department list (until data loads)
         List<String> initial = new ArrayList<>();
         initial.add("All Departments");
         deptFilterInput.setAdapter(new ArrayAdapter<>(requireContext(), android.R.layout.simple_list_item_1, initial));
@@ -172,26 +179,31 @@ public final class PracticalsFragment extends BaseAuthedFragment {
         if (p == null || getContext() == null) return;
         String title = p.title != null && !p.title.trim().isEmpty() ? p.title : "Practical";
 
-        View content = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_practical_details, null, false);
+        View content = LayoutInflater.from(requireContext()).inflate(R.layout.bottom_sheet_practical_preview, null, false);
         TextView meta = content.findViewById(R.id.meta);
+        TextView heroTitle = content.findViewById(R.id.heroTitle);
         TextView overview = content.findViewById(R.id.overview);
-        TextView objective = content.findViewById(R.id.objective);
-        TextView materials = content.findViewById(R.id.materials);
+        LinearLayout objectivesContainer = content.findViewById(R.id.objectivesContainer);
+        LinearLayout materialsContainer = content.findViewById(R.id.materialsContainer);
         TextView procedure = content.findViewById(R.id.procedure);
         TextView code = content.findViewById(R.id.code);
         TextView output = content.findViewById(R.id.output);
         TextView links = content.findViewById(R.id.links);
         ImageView figurePreview = content.findViewById(R.id.figurePreview);
+        ImageView heroImage = content.findViewById(R.id.heroImage);
         MaterialButton previewSimulatorBtn = content.findViewById(R.id.previewSimulatorBtn);
+        MaterialButton startSimulationBtn = content.findViewById(R.id.startSimulationBtn);
+
+        heroTitle.setText(title);
 
         String metaText = "ID: " + p.id;
-        if (p.lab_name != null && !p.lab_name.trim().isEmpty()) metaText += " • Lab: " + p.lab_name.trim();
-        if (p.dept_name != null && !p.dept_name.trim().isEmpty()) metaText += " • Dept: " + p.dept_name.trim();
+        if (p.lab_name != null && !p.lab_name.trim().isEmpty()) metaText += " * Lab: " + p.lab_name.trim();
+        if (p.dept_name != null && !p.dept_name.trim().isEmpty()) metaText += " * Dept: " + p.dept_name.trim();
         meta.setText(metaText);
 
-        bindSection(overview, "Overview", p.overview);
-        bindSection(objective, "Objective", p.objective);
-        bindSection(materials, "Materials Required", p.materials_required);
+        setRichText(overview, p.overview, "Overview will be available soon.");
+        populatePointList(objectivesContainer, p.objective, "No objectives available.");
+        populatePointList(materialsContainer, p.materials_required, "No materials listed.");
         bindSection(procedure, "Procedure", p.procedure);
         bindSection(code, "Program Code", p.program_code);
         bindSection(output, "Expected Output", p.program_output);
@@ -200,6 +212,7 @@ public final class PracticalsFragment extends BaseAuthedFragment {
         String simUrl = null;
         if (p.simulator_url != null && !p.simulator_url.trim().isEmpty()) simUrl = p.simulator_url.trim();
         else if (p.simulator_link != null && !p.simulator_link.trim().isEmpty()) simUrl = p.simulator_link.trim();
+
         if (simUrl != null) {
             linkText.append("Simulator: ").append(simUrl).append('\n');
         }
@@ -220,11 +233,10 @@ public final class PracticalsFragment extends BaseAuthedFragment {
         if (linkText.length() == 0) {
             links.setVisibility(View.GONE);
         } else {
-            links.setText(linkText.toString().trim());
+            links.setText(sanitizeText(linkText.toString().trim()));
             links.setVisibility(View.VISIBLE);
         }
 
-        // Inline figure preview (no external browser redirect)
         String firstFigureUrl = null;
         if (p.figure_urls != null) {
             for (String u : p.figure_urls) {
@@ -233,29 +245,45 @@ public final class PracticalsFragment extends BaseAuthedFragment {
                 if (!url.isEmpty()) { firstFigureUrl = url; break; }
             }
         }
-        if (firstFigureUrl != null && figurePreview != null) {
-            figurePreview.setVisibility(View.VISIBLE);
+        if (firstFigureUrl != null) {
             String fullUrl = firstFigureUrl;
-            Glide.with(figurePreview).load(fullUrl).centerInside().into(figurePreview);
+            Glide.with(figurePreview).load(fullUrl).centerCrop().into(figurePreview);
+            Glide.with(heroImage).load(fullUrl).centerCrop().into(heroImage);
             figurePreview.setOnClickListener(v -> showImagePreviewDialog(fullUrl));
-        } else if (figurePreview != null) {
-            figurePreview.setVisibility(View.GONE);
+        } else {
+            figurePreview.setImageResource(R.drawable.ic_shield_lab_72);
+            heroImage.setImageResource(R.drawable.ic_shield_lab_72);
         }
 
-        // Simulator preview in a WebView dialog (no external browser redirect)
-        if (previewSimulatorBtn != null && simUrl != null && !simUrl.trim().isEmpty()) {
+        if (simUrl != null && !simUrl.trim().isEmpty()) {
             String simulatorUrl = simUrl.trim();
             previewSimulatorBtn.setVisibility(View.VISIBLE);
             previewSimulatorBtn.setOnClickListener(v -> showWebPreviewDialog(title, simulatorUrl));
-        } else if (previewSimulatorBtn != null) {
+            startSimulationBtn.setOnClickListener(v -> showWebPreviewDialog(title, simulatorUrl));
+        } else {
             previewSimulatorBtn.setVisibility(View.GONE);
+            startSimulationBtn.setEnabled(false);
+            startSimulationBtn.setText("Simulation Link Unavailable");
         }
 
-        new MaterialAlertDialogBuilder(requireContext())
-                .setTitle(title)
-                .setView(content)
-                .setPositiveButton("OK", null)
-                .show();
+        BottomSheetDialog sheet = new BottomSheetDialog(requireContext());
+        sheet.setContentView(content);
+        sheet.setOnShowListener(dialog -> {
+            FrameLayout bottomSheet = sheet.findViewById(com.google.android.material.R.id.design_bottom_sheet);
+            if (bottomSheet == null) return;
+            ViewGroup.LayoutParams lp = bottomSheet.getLayoutParams();
+            lp.height = ViewGroup.LayoutParams.MATCH_PARENT;
+            bottomSheet.setLayoutParams(lp);
+
+            BottomSheetBehavior<FrameLayout> behavior = BottomSheetBehavior.from(bottomSheet);
+            behavior.setSkipCollapsed(true);
+            behavior.setState(BottomSheetBehavior.STATE_EXPANDED);
+
+            content.setAlpha(0f);
+            content.setTranslationY(24f);
+            content.animate().alpha(1f).translationY(0f).setDuration(220).start();
+        });
+        sheet.show();
     }
 
     private static void bindSection(TextView tv, String label, String value) {
@@ -264,8 +292,60 @@ public final class PracticalsFragment extends BaseAuthedFragment {
             tv.setVisibility(View.GONE);
             return;
         }
-        tv.setText(label + ":\n" + value.trim());
+        tv.setText(label + ":\n" + sanitizeText(value));
         tv.setVisibility(View.VISIBLE);
+    }
+
+    private static String sanitizeText(String text) {
+        if (text == null) return "";
+        String t = text.trim();
+        if (t.isEmpty()) return "";
+        Spanned spanned = Html.fromHtml(t, Html.FROM_HTML_MODE_LEGACY);
+        return spanned.toString().replace('\u00A0', ' ').trim();
+    }
+
+    private void setRichText(TextView tv, String value, String fallback) {
+        if (tv == null) return;
+        String clean = sanitizeText(value);
+        tv.setText(clean.isEmpty() ? fallback : clean);
+    }
+
+    private void populatePointList(LinearLayout container, String raw, String fallback) {
+        if (container == null) return;
+        container.removeAllViews();
+        List<String> points = splitPoints(raw);
+        if (points.isEmpty()) points.add(fallback);
+
+        LayoutInflater inflater = LayoutInflater.from(container.getContext());
+        for (String point : points) {
+            View row = inflater.inflate(R.layout.item_preview_point, container, false);
+            TextView text = row.findViewById(R.id.text);
+            text.setText(point);
+            container.addView(row);
+        }
+    }
+
+    private static List<String> splitPoints(String raw) {
+        List<String> out = new ArrayList<>();
+        String clean = sanitizeText(raw);
+        if (clean.isEmpty()) return out;
+
+        String[] lines = clean.split("\\r?\\n");
+        for (String line : lines) {
+            String item = line.trim();
+            if (item.isEmpty()) continue;
+            item = item.replaceFirst("^[-*\\d.)\\s]+", "").trim();
+            if (!item.isEmpty()) out.add(item);
+        }
+
+        if (out.isEmpty()) {
+            String[] parts = clean.split("\\s*;\\s*");
+            for (String part : parts) {
+                String item = part.trim();
+                if (!item.isEmpty()) out.add(item);
+            }
+        }
+        return out;
     }
 
     private void showWebPreviewDialog(String title, String url) {
@@ -277,12 +357,22 @@ public final class PracticalsFragment extends BaseAuthedFragment {
         final String allowedHost = startUri.getHost();
         if (allowedHost == null || allowedHost.trim().isEmpty()) return;
 
-        WebView web = new WebView(requireContext());
+        BottomSheetDialog sheet = new BottomSheetDialog(requireContext());
+        View content = LayoutInflater.from(requireContext()).inflate(R.layout.bottom_sheet_simulator_preview, null, false);
+        TextView previewTitle = content.findViewById(R.id.previewTitle);
+        ProgressBar loading = content.findViewById(R.id.previewLoading);
+        MaterialButton openExternalBtn = content.findViewById(R.id.openExternalBtn);
+        MaterialButton closeBtn = content.findViewById(R.id.closePreviewBtn);
+        WebView web = content.findViewById(R.id.simulatorWebView);
+
+        previewTitle.setText("Preview: " + title);
         WebSettings s = web.getSettings();
-        s.setJavaScriptEnabled(true); // simulator pages may require JS
+        s.setJavaScriptEnabled(true);
         s.setDomStorageEnabled(true);
         s.setLoadWithOverviewMode(true);
         s.setUseWideViewPort(true);
+        s.setBuiltInZoomControls(true);
+        s.setDisplayZoomControls(false);
         s.setJavaScriptCanOpenWindowsAutomatically(false);
         s.setAllowFileAccess(false);
         s.setAllowContentAccess(false);
@@ -294,6 +384,11 @@ public final class PracticalsFragment extends BaseAuthedFragment {
         }
 
         web.setWebViewClient(new WebViewClient() {
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                loading.setVisibility(View.GONE);
+            }
+
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                 if (request == null || request.getUrl() == null) return true;
@@ -312,15 +407,39 @@ public final class PracticalsFragment extends BaseAuthedFragment {
                 return !allowedHost.equalsIgnoreCase(host);
             }
         });
+
+        web.setWebChromeClient(new WebChromeClient() {
+            @Override
+            public void onProgressChanged(WebView view, int newProgress) {
+                if (newProgress >= 100) loading.setVisibility(View.GONE);
+                else loading.setVisibility(View.VISIBLE);
+            }
+        });
+
+        openExternalBtn.setOnClickListener(v -> {
+            try {
+                startActivity(new android.content.Intent(android.content.Intent.ACTION_VIEW, Uri.parse(startUrl)));
+            } catch (Exception e) {
+                Toast.makeText(requireContext(), "Unable to open browser", Toast.LENGTH_SHORT).show();
+            }
+        });
+        closeBtn.setOnClickListener(v -> sheet.dismiss());
+
+        sheet.setContentView(content);
+        sheet.setOnShowListener(dialog -> {
+            FrameLayout bottomSheet = sheet.findViewById(com.google.android.material.R.id.design_bottom_sheet);
+            if (bottomSheet == null) return;
+            ViewGroup.LayoutParams lp = bottomSheet.getLayoutParams();
+            lp.height = ViewGroup.LayoutParams.MATCH_PARENT;
+            bottomSheet.setLayoutParams(lp);
+            BottomSheetBehavior<FrameLayout> behavior = BottomSheetBehavior.from(bottomSheet);
+            behavior.setSkipCollapsed(true);
+            behavior.setState(BottomSheetBehavior.STATE_EXPANDED);
+        });
+
         web.loadUrl(startUrl);
-
-        androidx.appcompat.app.AlertDialog dlg = new MaterialAlertDialogBuilder(requireContext())
-                .setTitle("Preview: " + title)
-                .setView(web)
-                .setPositiveButton("Close", null)
-                .show();
-
-        dlg.setOnDismissListener(d -> {
+        sheet.show();
+        sheet.setOnDismissListener(d -> {
             try { web.loadUrl("about:blank"); } catch (Exception ignored) {}
             try { web.stopLoading(); } catch (Exception ignored) {}
             try { web.destroy(); } catch (Exception ignored) {}
@@ -361,3 +480,4 @@ public final class PracticalsFragment extends BaseAuthedFragment {
         super.onDestroyView();
     }
 }
+

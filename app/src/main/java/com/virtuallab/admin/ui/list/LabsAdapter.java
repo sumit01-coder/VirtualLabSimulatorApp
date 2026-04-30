@@ -3,6 +3,7 @@ package com.virtuallab.admin.ui.list;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -25,6 +26,7 @@ public final class LabsAdapter extends RecyclerView.Adapter<LabsAdapter.VH> {
     private final List<Lab> all = new ArrayList<>();
     private final List<Lab> visible = new ArrayList<>();
     private String query = "";
+    private String subjectFilter = "all";
 
     public LabsAdapter(Listener listener) {
         this.listener = listener;
@@ -38,6 +40,11 @@ public final class LabsAdapter extends RecyclerView.Adapter<LabsAdapter.VH> {
 
     public void setQuery(String q) {
         query = q != null ? q.trim() : "";
+        applyFilter();
+    }
+
+    public void setSubjectFilter(String next) {
+        subjectFilter = next != null ? next.trim().toLowerCase(Locale.US) : "all";
         applyFilter();
     }
 
@@ -56,14 +63,20 @@ public final class LabsAdapter extends RecyclerView.Adapter<LabsAdapter.VH> {
         for (Lab l : all) {
             if (l == null) continue;
             if (needle.isEmpty()) {
-                visible.add(l);
+                if (matchesSubjectFilter(l)) visible.add(l);
                 continue;
             }
-            if (contains(l.name, needle) || contains(l.subject, needle) || contains(l.topics, needle) || contains(l.department_name, needle)) {
+            if ((contains(l.name, needle) || contains(l.subject, needle) || contains(l.topics, needle) || contains(l.department_name, needle))
+                    && matchesSubjectFilter(l)) {
                 visible.add(l);
             }
         }
         notifyDataSetChanged();
+    }
+
+    private boolean matchesSubjectFilter(Lab l) {
+        if (l == null || "all".equals(subjectFilter)) return true;
+        return contains(l.subject, subjectFilter) || contains(l.name, subjectFilter);
     }
 
     private static boolean contains(String v, String needle) {
@@ -82,9 +95,16 @@ public final class LabsAdapter extends RecyclerView.Adapter<LabsAdapter.VH> {
     public void onBindViewHolder(@NonNull VH h, int position) {
         Lab l = visible.get(position);
 
-        h.name.setText(l.name != null && !l.name.trim().isEmpty() ? l.name : "(no name)");
-        h.subject.setText(l.subject != null ? l.subject : "");
+        String name = l.name != null && !l.name.trim().isEmpty() ? l.name : "(no name)";
+        String subject = l.subject != null ? l.subject : "";
+        h.name.setText(name);
+        h.subject.setText(subject);
         h.department.setText(l.department_name != null ? l.department_name : "");
+
+        String initial = "L";
+        if (!subject.trim().isEmpty()) initial = String.valueOf(subject.trim().charAt(0)).toUpperCase(Locale.US);
+        else if (!name.trim().isEmpty()) initial = String.valueOf(name.trim().charAt(0)).toUpperCase(Locale.US);
+        h.iconTile.setText(initial);
 
         if (l.topics != null && !l.topics.trim().isEmpty()) {
             h.topics.setVisibility(View.VISIBLE);
@@ -112,13 +132,17 @@ public final class LabsAdapter extends RecyclerView.Adapter<LabsAdapter.VH> {
         final TextView subject;
         final TextView topics;
         final TextView department;
+        final TextView iconTile;
+        final ImageView moreBtn;
 
         VH(@NonNull View itemView) {
             super(itemView);
+            iconTile = itemView.findViewById(R.id.iconTile);
             name = itemView.findViewById(R.id.name);
             subject = itemView.findViewById(R.id.subject);
             topics = itemView.findViewById(R.id.topics);
             department = itemView.findViewById(R.id.department);
+            moreBtn = itemView.findViewById(R.id.moreBtn);
         }
     }
 }
