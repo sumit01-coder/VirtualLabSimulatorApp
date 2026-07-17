@@ -1,0 +1,476 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.swiperefreshlayout.widget.SwipeRefreshLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/swipe"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/bg_dark"
+        android:clipToPadding="false"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingBottom="@dimen/space_2xl">
+
+            <LinearLayout
+                android:id="@+id/dashboardHeader"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_blue_header_gradient"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingStart="@dimen/space_lg"
+                android:paddingTop="@dimen/space_lg"
+                android:paddingEnd="@dimen/space_lg"
+                android:paddingBottom="28dp">
+
+                <ImageView
+                    android:id="@+id/menuToggle"
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:src="@drawable/ic_menu_24"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:clickable="true"
+                    android:focusable="true" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/space_md"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/welcomeText"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Hi there 👋"
+                        android:textColor="@android:color/white"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:maxLines="1"
+                        android:ellipsize="end" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="Dashboard Overview"
+                        android:textColor="#D7E4FF"
+                        android:textSize="14sp" />
+                </LinearLayout>
+
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_marginEnd="@dimen/space_sm"
+                    android:src="@drawable/ic_notifications_24" />
+
+                <TextView
+                    android:layout_width="42dp"
+                    android:layout_height="42dp"
+                    android:background="@drawable/bg_avatar"
+                    android:gravity="center"
+                    android:text="S"
+                    android:textColor="@android:color/white"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/space_md"
+                android:layout_marginTop="-14dp"
+                android:layout_marginEnd="@dimen/space_md"
+                android:gravity="end">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/profileBtn"
+                    style="@style/Widget.VirtualLab.Button.Small"
+                    android:layout_width="wrap_content"
+                    android:layout_height="@dimen/btn_h_sm"
+                    android:text="My Profile"
+                    android:textColor="@color/brand"
+                    app:backgroundTint="@android:color/white"
+                    app:icon="@drawable/ic_person_24"
+                    app:iconTint="@color/brand" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/timeFilterRow"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/space_md"
+                android:layout_marginTop="@dimen/space_sm"
+                android:layout_marginEnd="@dimen/space_md"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Time Filter"
+                    android:textColor="@color/text_muted"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/filterTodayBtn"
+                    style="@style/Widget.VirtualLab.Button.Small"
+                    android:layout_width="wrap_content"
+                    android:layout_height="@dimen/btn_h_sm"
+                    android:text="Today"
+                    android:textColor="@android:color/white"
+                    app:backgroundTint="@color/brand" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/filterWeekBtn"
+                    style="@style/Widget.VirtualLab.Button.Small"
+                    android:layout_width="wrap_content"
+                    android:layout_height="@dimen/btn_h_sm"
+                    android:layout_marginStart="8dp"
+                    android:text="Week"
+                    android:textColor="@color/text_primary"
+                    app:backgroundTint="@android:color/white" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/filterMonthBtn"
+                    style="@style/Widget.VirtualLab.Button.Small"
+                    android:layout_width="wrap_content"
+                    android:layout_height="@dimen/btn_h_sm"
+                    android:layout_marginStart="8dp"
+                    android:text="Month"
+                    android:textColor="@color/text_primary"
+                    app:backgroundTint="@android:color/white" />
+            </LinearLayout>
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardUsersFeatured"
+                style="@style/Widget.VirtualLab.Card"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/space_md"
+                android:layout_marginTop="@dimen/space_md"
+                android:layout_marginEnd="@dimen/space_md"
+                app:cardBackgroundColor="@color/brand">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="@dimen/space_lg">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Users"
+                        android:textColor="#DDE6FF"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/statUsersFeatured"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:text="0"
+                        android:textColor="@android:color/white"
+                        android:textSize="36sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/statUsersTrendFeatured"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="▲ +0.0% vs last period"
+                        android:textColor="#C8FAD6"
+                        android:textSize="12sp" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <GridLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="10dp"
+                android:layout_marginTop="@dimen/space_md"
+                android:layout_marginEnd="10dp"
+                android:columnCount="2">
+
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/cardUsers"
+                    style="@style/Widget.VirtualLab.Card"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_row="0"
+                    android:layout_column="0"
+                    android:layout_columnWeight="1"
+                    android:layout_margin="6dp">
+
+                    <include layout="@layout/item_dashboard_users" />
+                </com.google.android.material.card.MaterialCardView>
+
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/cardLabs"
+                    style="@style/Widget.VirtualLab.Card"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_columnWeight="1"
+                    android:layout_margin="6dp">
+                    <include layout="@layout/item_dashboard_labs" />
+                </com.google.android.material.card.MaterialCardView>
+
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/cardPracticals"
+                    style="@style/Widget.VirtualLab.Card"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_columnWeight="1"
+                    android:layout_margin="6dp">
+                    <include layout="@layout/item_dashboard_practicals" />
+                </com.google.android.material.card.MaterialCardView>
+
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/cardTickets"
+                    style="@style/Widget.VirtualLab.Card"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_columnWeight="1"
+                    android:layout_margin="6dp">
+                    <include layout="@layout/item_dashboard_tickets" />
+                </com.google.android.material.card.MaterialCardView>
+
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/cardSecurity"
+                    style="@style/Widget.VirtualLab.Card"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_columnWeight="1"
+                    android:layout_margin="6dp">
+                    <include layout="@layout/item_dashboard_security" />
+                </com.google.android.material.card.MaterialCardView>
+
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/cardApiHealth"
+                    style="@style/Widget.VirtualLab.Card"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_columnWeight="1"
+                    android:layout_margin="6dp">
+                    <include layout="@layout/item_dashboard_api" />
+                </com.google.android.material.card.MaterialCardView>
+            </GridLayout>
+
+            <com.google.android.material.card.MaterialCardView
+                style="@style/Widget.VirtualLab.Card"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/space_md"
+                android:layout_marginTop="@dimen/space_md"
+                android:layout_marginEnd="@dimen/space_md">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="@dimen/space_lg">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Quick Actions"
+                        android:textColor="@color/text_primary"
+                        android:textSize="16sp"
+                        android:textStyle="bold" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_sm"
+                        android:orientation="horizontal">
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/actionAddUserBtn"
+                            style="@style/Widget.VirtualLab.Button.Small"
+                            android:layout_width="0dp"
+                            android:layout_height="@dimen/btn_h_sm"
+                            android:layout_weight="1"
+                            android:text="Add User"
+                            android:textColor="@android:color/white"
+                            app:backgroundTint="@color/brand"
+                            app:icon="@drawable/ic_add_24"
+                            app:iconTint="@android:color/white" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/actionCreateLabBtn"
+                            style="@style/Widget.VirtualLab.Button.Small"
+                            android:layout_width="0dp"
+                            android:layout_height="@dimen/btn_h_sm"
+                            android:layout_marginStart="8dp"
+                            android:layout_weight="1"
+                            android:text="Create Lab"
+                            android:textColor="@color/text_primary"
+                            app:backgroundTint="@android:color/white"
+                            app:icon="@drawable/ic_labs_24"
+                            app:iconTint="@color/brand" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/actionReportsBtn"
+                            style="@style/Widget.VirtualLab.Button.Small"
+                            android:layout_width="0dp"
+                            android:layout_height="@dimen/btn_h_sm"
+                            android:layout_marginStart="8dp"
+                            android:layout_weight="1"
+                            android:text="View Reports"
+                            android:textColor="@color/text_primary"
+                            app:backgroundTint="@android:color/white"
+                            app:icon="@drawable/ic_dashboard_24"
+                            app:iconTint="@color/brand" />
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+
+            <com.google.android.material.card.MaterialCardView
+                style="@style/Widget.VirtualLab.Card"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/space_md"
+                android:layout_marginTop="@dimen/space_md"
+                android:layout_marginEnd="@dimen/space_md">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="@dimen/space_lg">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="System Overview"
+                        android:textColor="@color/text_primary"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/healthServer"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_sm"
+                        android:text="Checking server..."
+                        android:textColor="@color/text_primary" />
+
+                    <TextView
+                        android:id="@+id/healthDb"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:text="Checking database..."
+                        android:textColor="@color/text_primary" />
+
+                    <TextView
+                        android:id="@+id/healthApi"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:text="Checking API..."
+                        android:textColor="@color/text_primary" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <com.google.android.material.card.MaterialCardView
+                style="@style/Widget.VirtualLab.Card"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/space_md"
+                android:layout_marginTop="@dimen/space_md"
+                android:layout_marginEnd="@dimen/space_md">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="@dimen/space_lg">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="User Growth"
+                        android:textColor="@color/text_primary"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/statNewUsersWeek"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_sm"
+                        android:text="Loading..."
+                        android:textColor="@color/text_muted"
+                        android:textSize="14sp" />
+
+                    <TextView
+                        android:id="@+id/statTotalUsersLabel"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text=""
+                        android:textColor="@color/success"
+                        android:textSize="28sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <com.google.android.material.card.MaterialCardView
+                style="@style/Widget.VirtualLab.Card"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/space_md"
+                android:layout_marginTop="@dimen/space_md"
+                android:layout_marginEnd="@dimen/space_md">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="@dimen/space_lg">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Active Tickets"
+                        android:textColor="@color/text_primary"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/statActiveTicketsDetail"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_sm"
+                        android:text="Loading..."
+                        android:textColor="@color/text_muted"
+                        android:textSize="14sp" />
+
+                    <TextView
+                        android:id="@+id/statActiveTicketsBig"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text=""
+                        android:textColor="@color/warning"
+                        android:textSize="36sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+</androidx.swiperefreshlayout.widget.SwipeRefreshLayout>

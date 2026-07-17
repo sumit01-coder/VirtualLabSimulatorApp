@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/settings_system"
+        android:title="System Settings" />
+    <item
+        android:id="@+id/settings_footer"
+        android:title="Footer Settings" />
+    <item
+        android:id="@+id/settings_admin_mfa"
+        android:title="Admin MFA (TOTP)" />
+    <item
+        android:id="@+id/settings_tokens"
+        android:title="Token Requests" />
+    <item
+        android:id="@+id/settings_users"
+        android:title="Users (Broadcast)" />
+    <item
+        android:id="@+id/settings_feedback"
+        android:title="Feedback" />
+</menu>
+

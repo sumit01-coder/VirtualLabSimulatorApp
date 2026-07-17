@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.sumit.virtuallabadmin.v29">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+
+    <application
+        android:name="com.virtuallab.admin.AdminApp"
+        android:allowBackup="false"
+        android:fullBackupContent="false"
+        android:usesCleartextTraffic="false"
+        android:enableOnBackInvokedCallback="true"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.VirtualLabAdmin">
+
+        <activity
+            android:name="com.virtuallab.admin.ui.LoginActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name="com.virtuallab.admin.ui.MainActivity"
+            android:exported="false"
+            android:launchMode="singleTop" />
+
+        <activity
+            android:name="com.virtuallab.admin.ui.AppLockActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:finishOnTaskLaunch="true" />
+
+        <activity
+            android:name="com.virtuallab.admin.ui.LabsActivity"
+            android:exported="false" />
+
+        <activity
+            android:name="com.virtuallab.admin.ui.UsersActivity"
+            android:exported="false" />
+
+        <activity
+            android:name="com.virtuallab.admin.ui.DepartmentsActivity"
+            android:exported="false" />
+
+
+        <activity
+            android:name="com.virtuallab.admin.ui.AppUpdateActivity"
+            android:exported="false" />
+        <activity
+            android:name="com.virtuallab.admin.ui.PermissionMatrixActivity"
+            android:exported="false" />
+        <activity
+            android:name="com.virtuallab.admin.ui.AuditLogActivity"
+            android:exported="false" />
+        <activity
+            android:name="com.virtuallab.admin.ui.ApiHealthActivity"
+            android:exported="false" />
+        <activity
+            android:name="com.virtuallab.admin.ui.AnalyticsActivity"
+            android:exported="false" />
+
+        <receiver
+            android:name="com.virtuallab.admin.work.UpdateDownloadReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.DOWNLOAD_COMPLETE" />
+            </intent-filter>
+        </receiver>
+
+        <receiver
+            android:name="com.virtuallab.admin.work.UpdateInstallReceiver"
+            android:exported="false" />
+
+    </application>
+</manifest>

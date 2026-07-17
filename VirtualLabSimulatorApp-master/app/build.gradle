@@ -1,0 +1,73 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.sumit.virtuallabadmin.v29'
+    compileSdk 35
+
+    buildFeatures {
+        buildConfig true
+    }
+
+    // ✅ Safe variable names (NO conflict)
+    def keystorePath = System.getenv("ANDROID_KEYSTORE_PATH")
+    def keystorePasswordEnv = System.getenv("ANDROID_KEYSTORE_PASSWORD")
+    def keyAliasEnv = System.getenv("ANDROID_KEY_ALIAS")
+    def keyPasswordEnv = System.getenv("ANDROID_KEY_PASSWORD")
+
+    if (keystorePath && keystorePasswordEnv && keyAliasEnv && keyPasswordEnv) {
+        signingConfigs {
+            release {
+                storeFile file(keystorePath)
+                storePassword keystorePasswordEnv
+                keyAlias keyAliasEnv
+                keyPassword keyPasswordEnv
+            }
+        }
+    }
+
+    defaultConfig {
+        applicationId "com.sumit.virtuallabadmin.v29"
+        minSdk 24
+        targetSdk 35
+        versionCode 37
+        versionName "3.7"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            if (signingConfigs.findByName("release") != null) {
+                signingConfig signingConfigs.release
+            }
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    implementation 'androidx.annotation:annotation:1.9.1'
+    implementation 'androidx.biometric:biometric:1.1.0'
+    implementation 'androidx.work:work-runtime:2.9.0'
+    implementation 'com.google.android.material:material:1.12.0'
+    implementation 'androidx.appcompat:appcompat:1.7.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.2.0'
+    implementation 'androidx.recyclerview:recyclerview:1.4.0'
+    implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.1.0'
+    implementation 'androidx.transition:transition:1.5.1'
+
+    implementation 'com.squareup.retrofit2:retrofit:2.11.0'
+    implementation 'com.squareup.retrofit2:converter-gson:2.11.0'
+    implementation 'com.squareup.okhttp3:okhttp:4.12.0'
+    implementation 'com.squareup.okhttp3:logging-interceptor:4.12.0'
+
+    implementation 'com.github.bumptech.glide:glide:4.16.0'
+    annotationProcessor 'com.github.bumptech.glide:compiler:4.16.0'
+
+    implementation 'androidx.security:security-crypto:1.0.0'
+}
