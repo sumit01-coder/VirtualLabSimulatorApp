@@ -156,7 +156,7 @@
                 android:layout_weight="1"
                 android:text="Block"
                 android:textColor="@android:color/white"
-                app:backgroundTint="@color/ddos_indigo" />
+                app:backgroundTint="@color/ddos_red" />
         </LinearLayout>
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>

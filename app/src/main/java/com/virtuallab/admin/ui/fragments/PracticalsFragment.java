@@ -62,7 +62,7 @@ public final class PracticalsFragment extends BaseAuthedFragment {
     private TextInputEditText searchInput;
     private MaterialAutoCompleteTextView deptFilterInput;
     private TextView countText;
-    private TextView emptyText;
+    private View emptyText;
 
     private Call<ApiResponse<List<Practical>>> pendingCall;
 

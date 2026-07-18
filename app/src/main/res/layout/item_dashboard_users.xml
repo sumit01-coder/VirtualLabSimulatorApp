@@ -1,43 +1,58 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:padding="@dimen/space_md">
+    android:padding="16dp">
 
-    <TextView
-        android:layout_width="46dp"
-        android:layout_height="46dp"
-        android:background="@drawable/bg_card_top_icon"
-        android:gravity="center"
-        android:text="U"
-        android:textColor="@color/brand"
-        android:textStyle="bold" />
+    <!-- Colored top accent -->
+    <View
+        android:layout_width="32dp"
+        android:layout_height="4dp"
+        android:background="@drawable/bg_chip_brand"
+        android:layout_marginBottom="12dp" />
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="@dimen/space_md"
-        android:text="Users"
-        android:textColor="@color/text_muted"
-        android:textStyle="bold" />
+    <!-- Icon -->
+    <ImageView
+        android:layout_width="28dp"
+        android:layout_height="28dp"
+        android:src="@drawable/ic_users_24"
+        app:tint="@color/brand"
+        android:layout_marginBottom="10dp" />
 
+    <!-- Big number -->
     <TextView
         android:id="@+id/statUsers"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="6dp"
-        android:text="1,240"
+        android:text="0"
         android:textColor="@color/text_primary"
-        android:textSize="28sp"
-        android:textStyle="bold" />
+        android:textSize="26sp"
+        android:textStyle="bold"
+        android:letterSpacing="-0.02" />
 
+    <!-- Label -->
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
-        android:text="+32 this week"
-        android:textColor="@color/success"
-        android:textSize="12sp" />
-</LinearLayout>
+        android:text="Total Users"
+        android:textColor="@color/text_muted"
+        android:textSize="11sp"
+        android:layout_marginTop="2dp" />
 
+    <!-- Trend -->
+    <TextView
+        android:id="@+id/statUsersTrend"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="↑ +32 this month"
+        android:textColor="@color/success"
+        android:textSize="10sp"
+        android:textStyle="bold"
+        android:layout_marginTop="6dp"
+        android:background="@drawable/bg_chip_green_soft"
+        android:paddingHorizontal="6dp"
+        android:paddingVertical="2dp" />
+
+</LinearLayout>

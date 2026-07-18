@@ -23,6 +23,7 @@ import java.util.Set;
 public final class TicketsAdapter extends RecyclerView.Adapter<TicketsAdapter.VH> {
     public interface Listener {
         void onResolve(Ticket ticket);
+        void onReply(Ticket ticket);
         void onOpen(Ticket ticket);
         void onSelectionChanged(int count);
     }
@@ -97,6 +98,10 @@ public final class TicketsAdapter extends RecyclerView.Adapter<TicketsAdapter.VH
         boolean canResolve = t.status != null && !t.status.equalsIgnoreCase("closed");
         h.resolve.setVisibility(canResolve ? View.VISIBLE : View.GONE);
         h.resolve.setOnClickListener(v -> listener.onResolve(t));
+        
+        h.reply.setVisibility(canResolve ? View.VISIBLE : View.GONE);
+        h.reply.setOnClickListener(v -> listener.onReply(t));
+        
         h.selectBox.setOnCheckedChangeListener(null);
         h.selectBox.setChecked(selectedIds.contains(t.id));
         h.selectBox.setOnCheckedChangeListener((buttonView, isChecked) -> {
@@ -156,6 +161,7 @@ public final class TicketsAdapter extends RecyclerView.Adapter<TicketsAdapter.VH
         final TextView email;
         final TextView statusChip;
         final TextView date;
+        final MaterialButton reply;
         final MaterialButton resolve;
         final CheckBox selectBox;
 
@@ -168,6 +174,7 @@ public final class TicketsAdapter extends RecyclerView.Adapter<TicketsAdapter.VH
             email = itemView.findViewById(R.id.email);
             statusChip = itemView.findViewById(R.id.statusChip);
             date = itemView.findViewById(R.id.date);
+            reply = itemView.findViewById(R.id.replyBtn);
             resolve = itemView.findViewById(R.id.resolveBtn);
             selectBox = itemView.findViewById(R.id.selectBox);
         }

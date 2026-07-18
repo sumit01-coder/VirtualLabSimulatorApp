@@ -315,85 +315,33 @@ public final class MainActivity extends AppCompatActivity {
     }
 
     private void updateCustomNavState(int selectedId) {
-        updateNavItem(
-                R.id.navDashboard,
-                R.id.navDashboardPill,
-                R.id.navDashboardOrb,
-                R.id.navDashboardIndicator,
-                R.id.navDashboardIcon,
-                R.id.navDashboardLabel,
-                selectedId == R.id.nav_dashboard
-        );
-        updateNavItem(
-                R.id.navTickets,
-                R.id.navTicketsPill,
-                R.id.navTicketsOrb,
-                R.id.navTicketsIndicator,
-                R.id.navTicketsIcon,
-                R.id.navTicketsLabel,
-                selectedId == R.id.nav_tickets
-        );
-        updateNavItem(
-                R.id.navPracticals,
-                R.id.navPracticalsPill,
-                R.id.navPracticalsOrb,
-                R.id.navPracticalsIndicator,
-                R.id.navPracticalsIcon,
-                R.id.navPracticalsLabel,
-                selectedId == R.id.nav_practicals
-        );
-        updateNavItem(
-                R.id.navSettings,
-                R.id.navSettingsPill,
-                R.id.navSettingsOrb,
-                R.id.navSettingsIndicator,
-                R.id.navSettingsIcon,
-                R.id.navSettingsLabel,
-                selectedId == R.id.nav_settings
-        );
-        updateNavItem(
-                R.id.navSecurity,
-                R.id.navSecurityPill,
-                R.id.navSecurityOrb,
-                R.id.navSecurityIndicator,
-                R.id.navSecurityIcon,
-                R.id.navSecurityLabel,
-                selectedId == R.id.nav_ddos
-        );
+        updateNavItem(R.id.navDashboard,  R.id.navDashboardPill,  R.id.navDashboardIcon,  R.id.navDashboardLabel,  selectedId == R.id.nav_dashboard);
+        updateNavItem(R.id.navTickets,    R.id.navTicketsPill,    R.id.navTicketsIcon,    R.id.navTicketsLabel,    selectedId == R.id.nav_tickets);
+        updateNavItem(R.id.navPracticals, R.id.navPracticalsPill, R.id.navPracticalsIcon, R.id.navPracticalsLabel, selectedId == R.id.nav_practicals);
+        updateNavItem(R.id.navSettings,   R.id.navSettingsPill,   R.id.navSettingsIcon,   R.id.navSettingsLabel,   selectedId == R.id.nav_settings);
+        updateNavItem(R.id.navSecurity,   R.id.navSecurityPill,   R.id.navSecurityIcon,   R.id.navSecurityLabel,   selectedId == R.id.nav_ddos);
     }
 
-    private void updateNavItem(int containerId, int pillId, int orbId, int indicatorId, int iconId, int labelId, boolean selected) {
-        View container = findViewById(containerId);
-        View pill = findViewById(pillId);
-        View orb = findViewById(orbId);
-        View indicator = findViewById(indicatorId);
-        ImageView icon = findViewById(iconId);
-        TextView label = findViewById(labelId);
-        if (container == null || pill == null || orb == null || indicator == null || icon == null || label == null) return;
+    private void updateNavItem(int containerId, int pillId, int iconId, int labelId, boolean selected) {
+        View pill   = findViewById(pillId);
+        ImageView icon  = findViewById(iconId);
+        TextView label  = findViewById(labelId);
+        if (pill == null || icon == null || label == null) return;
 
-        int iconTint = ContextCompat.getColor(this, selected ? android.R.color.white : R.color.text_soft);
-        int labelTint = ContextCompat.getColor(this, selected ? R.color.brand : R.color.text_muted);
-        pill.setBackgroundResource(selected ? R.drawable.bg_nav_item_active : android.R.color.transparent);
-        orb.setBackgroundResource(selected ? R.drawable.bg_nav_active_icon_orb : android.R.color.transparent);
-        indicator.setVisibility(selected ? View.VISIBLE : View.INVISIBLE);
-        icon.setImageTintList(ColorStateList.valueOf(iconTint));
-        label.setTextColor(labelTint);
-        label.setTypeface(label.getTypeface(), selected ? android.graphics.Typeface.BOLD : android.graphics.Typeface.NORMAL);
-        container.animate()
-                .scaleX(selected ? 1.05f : 1f)
-                .scaleY(selected ? 1.05f : 1f)
-                .setDuration(220)
-                .start();
-        orb.animate()
-                .scaleX(selected ? 1.05f : 1f)
-                .scaleY(selected ? 1.05f : 1f)
-                .setDuration(220)
-                .start();
-        pill.animate()
-                .translationY(selected ? -1f : 0f)
-                .alpha(selected ? 1f : 0.96f)
-                .setDuration(220)
-                .start();
+        // Pill background: gradient when active, transparent when inactive
+        pill.setBackgroundResource(selected ? R.drawable.bg_nav_pill_active : android.R.color.transparent);
+
+        // Icon tint: white when active, grey when inactive
+        int tint = ContextCompat.getColor(this, selected ? android.R.color.white : R.color.text_soft);
+        icon.setImageTintList(ColorStateList.valueOf(tint));
+        icon.setScaleX(1f);
+        icon.setScaleY(1f);
+
+        // Label: visible only when active
+        label.setAlpha(1f);
+        label.setMaxWidth(Integer.MAX_VALUE);
+        label.setTranslationX(0f);
+        label.setVisibility(selected ? View.VISIBLE : View.GONE);
     }
 
     private void ensureNotificationPermission() {

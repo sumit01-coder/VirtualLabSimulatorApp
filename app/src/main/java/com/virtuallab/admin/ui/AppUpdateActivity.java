@@ -23,9 +23,11 @@ import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.progressindicator.CircularProgressIndicator;
 import com.sumit.virtuallabadmin.v29.BuildConfig;
 import com.sumit.virtuallabadmin.v29.R;
@@ -58,9 +60,12 @@ public final class AppUpdateActivity extends AppCompatActivity {
     private TextView publishedAtText;
     private TextView notesText;
     private TextView statusText;
+    private TextView progressText;
 
     private MaterialButton downloadBtn;
+    private MaterialButton cancelDownloadBtn;
     private MaterialButton openGithubBtn;
+    private MaterialButton btnUninstall;
 
     private ImageView animIcon;
     private CircularProgressIndicator progress;
@@ -74,8 +79,8 @@ public final class AppUpdateActivity extends AppCompatActivity {
     private long downloadId = -1L;
     private ObjectAnimator downloadAnim;
     private BroadcastReceiver downloadReceiver;
+    private BroadcastReceiver localStatusReceiver;
 
-    private TextView progressText;
     private Handler progressHandler;
     private Runnable progressRunnable;
     private boolean hasPromptedInstall = false;
@@ -102,9 +107,12 @@ public final class AppUpdateActivity extends AppCompatActivity {
         publishedAtText = findViewById(R.id.publishedAtText);
         notesText = findViewById(R.id.notesText);
         statusText = findViewById(R.id.statusText);
+        progressText = findViewById(R.id.progressText);
 
         downloadBtn = findViewById(R.id.downloadBtn);
+        cancelDownloadBtn = findViewById(R.id.cancelDownloadBtn);
         openGithubBtn = findViewById(R.id.openGithubBtn);
+        btnUninstall = findViewById(R.id.btnUninstall);
 
         animIcon = findViewById(R.id.animIcon);
         progress = findViewById(R.id.progress);
@@ -123,6 +131,7 @@ public final class AppUpdateActivity extends AppCompatActivity {
 
         openGithubBtn.setOnClickListener(v -> openLink(bestReleaseLink()));
         downloadBtn.setOnClickListener(v -> onPrimaryAction());
+        btnUninstall.setOnClickListener(v -> promptUninstall());
 
         if (downloadId > 0) {
             // If activity was recreated, try to restore state.
@@ -152,6 +161,40 @@ public final class AppUpdateActivity extends AppCompatActivity {
         String cachedVer = p.getString(KEY_DOWNLOADED_APK_VERSION, null);
         if (cachedVer != null && !cachedVer.trim().isEmpty() && !isUpdateAvailable(BuildConfig.VERSION_NAME, cachedVer)) {
             clearCachedApk();
+        }
+        
+        if (localStatusReceiver == null) {
+            localStatusReceiver = new BroadcastReceiver() {
+                @Override
+                public void onReceive(Context context, Intent intent) {
+                    if (intent == null) return;
+                    int status = intent.getIntExtra("status", -1);
+                    if (status == android.content.pm.PackageInstaller.STATUS_SUCCESS) return;
+                    String msg = intent.getStringExtra("message");
+                    if (msg == null) msg = "Install failed";
+                    
+                    new MaterialAlertDialogBuilder(AppUpdateActivity.this)
+                        .setTitle("Install Failed")
+                        .setMessage(msg)
+                        .setPositiveButton("OK", null)
+                        .show();
+                }
+            };
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(localStatusReceiver, new IntentFilter("com.virtuallab.admin.UPDATE_INSTALL_LOCAL_STATUS"), Context.RECEIVER_NOT_EXPORTED);
+        } else {
+            registerReceiver(localStatusReceiver, new IntentFilter("com.virtuallab.admin.UPDATE_INSTALL_LOCAL_STATUS"));
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if (localStatusReceiver != null) {
+            try {
+                unregisterReceiver(localStatusReceiver);
+            } catch (Exception ignored) {}
         }
     }
 
@@ -238,9 +281,8 @@ public final class AppUpdateActivity extends AppCompatActivity {
 
         if (!updateAvailable && !latestVersion.isEmpty()) {
             statusText.setText("Up to date");
-            if (downloadId <= 0) {
-                downloadBtn.setEnabled(false);
-                downloadBtn.setVisibility(View.GONE);
+            if (downloadId <= 0 && downloadBtn.getVisibility() == View.VISIBLE) {
+                downloadBtn.setText("Re-download & install");
             }
         } else {
             if (cachedApk == null) {
@@ -333,7 +375,7 @@ public final class AppUpdateActivity extends AppCompatActivity {
         DownloadManager.Request req = new DownloadManager.Request(uri)
                 .setTitle("Virtual Lab Admin")
                 .setDescription("Downloading update")
-                .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+                .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE)
                 .setAllowedOverMetered(true)
                 .setAllowedOverRoaming(true)
                 .setMimeType("application/vnd.android.package-archive")
@@ -470,7 +512,7 @@ public final class AppUpdateActivity extends AppCompatActivity {
         // Fallback: ask the system installer directly (some ROMs/devices may block session installs).
         try {
             Intent install = new Intent(Intent.ACTION_INSTALL_PACKAGE);
-            install.setData(apkUri);
+            install.setDataAndType(apkUri, "application/vnd.android.package-archive");
             install.putExtra(Intent.EXTRA_NOT_UNKNOWN_SOURCE, true);
             install.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
             install.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -517,9 +559,9 @@ public final class AppUpdateActivity extends AppCompatActivity {
         progressText.setVisibility(View.VISIBLE);
         progress.setIndeterminate(false);
         progress.setProgressCompat(0, true);
-        downloadBtn.setEnabled(true);
-        downloadBtn.setText("Cancel download");
-        downloadBtn.setOnClickListener(v -> cancelDownload());
+        downloadBtn.setVisibility(View.GONE);
+        cancelDownloadBtn.setVisibility(View.VISIBLE);
+        cancelDownloadBtn.setOnClickListener(v -> cancelDownload());
 
         if (downloadAnim == null) {
             PropertyValuesHolder moveY = PropertyValuesHolder.ofFloat(View.TRANSLATION_Y, -15f, 15f);
@@ -577,6 +619,8 @@ public final class AppUpdateActivity extends AppCompatActivity {
     private void stopDownloadingUi() {
         progress.setVisibility(View.GONE);
         progressText.setVisibility(View.GONE);
+        cancelDownloadBtn.setVisibility(View.GONE);
+        downloadBtn.setVisibility(View.VISIBLE);
         if (downloadAnim != null) {
             downloadAnim.cancel();
             animIcon.setTranslationY(0f);
@@ -629,6 +673,18 @@ public final class AppUpdateActivity extends AppCompatActivity {
 
     private void toast(String msg) {
         Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
+    }
+
+    private void promptUninstall() {
+        com.virtuallab.admin.ui.utils.CustomAlertUtils.showWarning(this,
+                "Uninstall App?",
+                "If you are facing an 'App not installed as package conflicts' error, you must uninstall this old version first before installing the downloaded APK. Do you want to uninstall now?",
+                "Uninstall",
+                () -> {
+                    Intent intent = new Intent(Intent.ACTION_DELETE);
+                    intent.setData(Uri.parse("package:" + getPackageName()));
+                    startActivity(intent);
+                });
     }
 
     private String safeStr(String s) {
