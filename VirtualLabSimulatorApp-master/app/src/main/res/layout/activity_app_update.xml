@@ -200,6 +200,15 @@
                         app:strokeColor="@color/brand"
                         android:layout_marginTop="@dimen/space_sm" />
 
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnUninstall"
+                        style="@style/Widget.Material3.Button.TextButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Uninstall Old Version (Fix Conflict)"
+                        android:textColor="@color/danger"
+                        android:layout_marginTop="@dimen/space_sm" />
+
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 

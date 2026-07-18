@@ -61,6 +61,7 @@ public final class AppUpdateActivity extends AppCompatActivity {
 
     private MaterialButton downloadBtn;
     private MaterialButton openGithubBtn;
+    private MaterialButton btnUninstall;
 
     private ImageView animIcon;
     private CircularProgressIndicator progress;
@@ -105,6 +106,7 @@ public final class AppUpdateActivity extends AppCompatActivity {
 
         downloadBtn = findViewById(R.id.downloadBtn);
         openGithubBtn = findViewById(R.id.openGithubBtn);
+        btnUninstall = findViewById(R.id.btnUninstall);
 
         animIcon = findViewById(R.id.animIcon);
         progress = findViewById(R.id.progress);
@@ -123,6 +125,7 @@ public final class AppUpdateActivity extends AppCompatActivity {
 
         openGithubBtn.setOnClickListener(v -> openLink(bestReleaseLink()));
         downloadBtn.setOnClickListener(v -> onPrimaryAction());
+        btnUninstall.setOnClickListener(v -> promptUninstall());
 
         if (downloadId > 0) {
             // If activity was recreated, try to restore state.
@@ -629,6 +632,18 @@ public final class AppUpdateActivity extends AppCompatActivity {
 
     private void toast(String msg) {
         Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
+    }
+
+    private void promptUninstall() {
+        com.virtuallab.admin.ui.utils.CustomAlertUtils.showWarning(this,
+                "Uninstall App?",
+                "If you are facing an 'App not installed as package conflicts' error, you must uninstall this old version first before installing the downloaded APK. Do you want to uninstall now?",
+                "Uninstall",
+                () -> {
+                    Intent intent = new Intent(Intent.ACTION_DELETE);
+                    intent.setData(Uri.parse("package:" + getPackageName()));
+                    startActivity(intent);
+                });
     }
 
     private String safeStr(String s) {
