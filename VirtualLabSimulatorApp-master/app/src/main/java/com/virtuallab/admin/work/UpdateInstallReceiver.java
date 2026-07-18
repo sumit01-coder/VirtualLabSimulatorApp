@@ -42,18 +42,27 @@ public final class UpdateInstallReceiver extends BroadcastReceiver {
                     .remove(KEY_DOWNLOADED_APK_VERSION)
                     .apply();
             NotificationHelper.notify(context, 1202, "Updated", "App update installed successfully.");
+            
+            Intent local = new Intent("com.virtuallab.admin.UPDATE_INSTALL_LOCAL_STATUS");
+            local.putExtra("status", status);
+            context.sendBroadcast(local);
             return;
         }
 
         String reason = (message != null && !message.trim().isEmpty()) ? message.trim() : "Install failed";
         String hint = "";
         String lower = reason.toLowerCase();
-        if (lower.contains("update_incompatible") || lower.contains("signature") || lower.contains("conflict")) {
-            hint = " This usually means the APK is signed with a different keystore. Build/sign the new APK with the same key as the installed app (or uninstall the old app and install fresh).";
+        if (lower.contains("update_incompatible") || lower.contains("signature") || lower.contains("conflict") || lower.contains("invalid")) {
+            hint = " This usually means the APK is signed with a different keystore. Uninstall the old app and install fresh.";
         } else if (lower.contains("version downgrade") || lower.contains("downgrade")) {
             hint = " The APK versionCode is lower than the installed app. Increase versionCode and rebuild.";
         }
 
         NotificationHelper.notify(context, 1202, "Update failed", reason + hint);
+
+        Intent local = new Intent("com.virtuallab.admin.UPDATE_INSTALL_LOCAL_STATUS");
+        local.putExtra("status", status);
+        local.putExtra("message", reason + hint);
+        context.sendBroadcast(local);
     }
 }

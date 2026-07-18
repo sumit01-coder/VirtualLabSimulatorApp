@@ -23,9 +23,11 @@ import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.progressindicator.CircularProgressIndicator;
 import com.sumit.virtuallabadmin.v29.BuildConfig;
 import com.sumit.virtuallabadmin.v29.R;
@@ -77,6 +79,7 @@ public final class AppUpdateActivity extends AppCompatActivity {
     private long downloadId = -1L;
     private ObjectAnimator downloadAnim;
     private BroadcastReceiver downloadReceiver;
+    private BroadcastReceiver localStatusReceiver;
 
     private Handler progressHandler;
     private Runnable progressRunnable;
@@ -158,6 +161,40 @@ public final class AppUpdateActivity extends AppCompatActivity {
         String cachedVer = p.getString(KEY_DOWNLOADED_APK_VERSION, null);
         if (cachedVer != null && !cachedVer.trim().isEmpty() && !isUpdateAvailable(BuildConfig.VERSION_NAME, cachedVer)) {
             clearCachedApk();
+        }
+        
+        if (localStatusReceiver == null) {
+            localStatusReceiver = new BroadcastReceiver() {
+                @Override
+                public void onReceive(Context context, Intent intent) {
+                    if (intent == null) return;
+                    int status = intent.getIntExtra("status", -1);
+                    if (status == android.content.pm.PackageInstaller.STATUS_SUCCESS) return;
+                    String msg = intent.getStringExtra("message");
+                    if (msg == null) msg = "Install failed";
+                    
+                    new MaterialAlertDialogBuilder(AppUpdateActivity.this)
+                        .setTitle("Install Failed")
+                        .setMessage(msg)
+                        .setPositiveButton("OK", null)
+                        .show();
+                }
+            };
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(localStatusReceiver, new IntentFilter("com.virtuallab.admin.UPDATE_INSTALL_LOCAL_STATUS"), Context.RECEIVER_NOT_EXPORTED);
+        } else {
+            registerReceiver(localStatusReceiver, new IntentFilter("com.virtuallab.admin.UPDATE_INSTALL_LOCAL_STATUS"));
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if (localStatusReceiver != null) {
+            try {
+                unregisterReceiver(localStatusReceiver);
+            } catch (Exception ignored) {}
         }
     }
 
@@ -475,7 +512,7 @@ public final class AppUpdateActivity extends AppCompatActivity {
         // Fallback: ask the system installer directly (some ROMs/devices may block session installs).
         try {
             Intent install = new Intent(Intent.ACTION_INSTALL_PACKAGE);
-            install.setData(apkUri);
+            install.setDataAndType(apkUri, "application/vnd.android.package-archive");
             install.putExtra(Intent.EXTRA_NOT_UNKNOWN_SOURCE, true);
             install.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
             install.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
