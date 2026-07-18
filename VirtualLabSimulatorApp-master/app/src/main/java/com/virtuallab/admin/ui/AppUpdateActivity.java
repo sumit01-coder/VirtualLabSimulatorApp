@@ -241,9 +241,8 @@ public final class AppUpdateActivity extends AppCompatActivity {
 
         if (!updateAvailable && !latestVersion.isEmpty()) {
             statusText.setText("Up to date");
-            if (downloadId <= 0) {
-                downloadBtn.setEnabled(false);
-                downloadBtn.setVisibility(View.GONE);
+            if (downloadId <= 0 && downloadBtn.getVisibility() == View.VISIBLE) {
+                downloadBtn.setText("Re-download & install");
             }
         } else {
             if (cachedApk == null) {
