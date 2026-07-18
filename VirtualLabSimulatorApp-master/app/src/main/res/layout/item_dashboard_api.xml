@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
@@ -35,9 +35,22 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
-        android:text="Verified letters"
+        android:layout_marginTop="2dp"
+        android:text="Total Letters"
+        android:textColor="@color/text_muted"
+        android:textSize="11sp" />
+
+    <TextView
+        android:id="@+id/statLettersVerified"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="0 Verified"
         android:textColor="@color/success"
-        android:textSize="12sp" />
+        android:textSize="11sp"
+        android:textStyle="bold"
+        android:layout_marginTop="6dp"
+        android:background="@drawable/bg_chip_green_soft"
+        android:paddingHorizontal="8dp"
+        android:paddingVertical="4dp" />
 </LinearLayout>
 

@@ -5,6 +5,7 @@
     <color name="bg_surface">#FFFFFF</color>
     <color name="bg_surface_alt">#F1F5F9</color>
     <color name="stroke">#E2E8F0</color>
+    <color name="white">#FFFFFF</color>
 
     <!-- Brand (Premium Indigo) -->
     <color name="brand">#4F46E5</color>
@@ -23,6 +24,7 @@
     <color name="danger">#DC2626</color>
     <color name="error">#DC2626</color>
     <color name="info">#2563EB</color>
+    <color name="purple">#8B5CF6</color>
 
     <!-- Gradients -->
     <color name="drawer_bg_start">#312E81</color>
@@ -34,6 +36,7 @@
     <color name="chip_green_bg">#D1FAE5</color>
     <color name="chip_red_bg">#FEE2E2</color>
     <color name="chip_yellow_bg">#FEF3C7</color>
+    <color name="chip_purple_bg">#EDE9FE</color>
 
     <color name="shadow_tint">#1A0F172A</color>
     <color name="nav_indicator">#E9E7FF</color>

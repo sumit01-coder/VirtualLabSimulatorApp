@@ -6,7 +6,12 @@ public final class Stats {
     public int practicals;
     public int users;
     public int verified_letters;
+    public int total_letters;
     public int active_tickets;
-    public int new_users_week; // New: users registered in last 7 days
+    public int total_tickets;
+    public int new_users_month; // New: users registered in this month
+    public int new_labs_month;
+    public int new_practicals_month;
+    public int new_departments_month;
 }
 

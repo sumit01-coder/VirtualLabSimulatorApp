@@ -216,12 +216,79 @@ public final class TicketsFragment extends BaseAuthedFragment implements Tickets
                 .setNegativeButton("Close", null);
 
         if (canClose) {
-            b.setNeutralButton("Assign/Note", (d, which) -> openAssignDialog(ticket));
-            b.setPositiveButton("Close Ticket", (d, which) -> onResolve(ticket));
+            b.setPositiveButton("Actions...", (d, which) -> showTicketActions(ticket, subject));
         } else {
             b.setPositiveButton("OK", null);
         }
         b.show();
+    }
+
+    @Override
+    public void onReply(Ticket ticket) {
+        if (ticket == null || getContext() == null) return;
+        android.content.Intent intent = new android.content.Intent(getContext(), com.virtuallab.admin.ui.TicketChatActivity.class);
+        intent.putExtra(com.virtuallab.admin.ui.TicketChatActivity.EXTRA_TICKET_ID, ticket.id);
+        intent.putExtra(com.virtuallab.admin.ui.TicketChatActivity.EXTRA_TICKET_SUBJECT, ticket.subject);
+        startActivity(intent);
+    }
+
+    private void showTicketActions(Ticket ticket, String subject) {
+        CharSequence[] options = {"Reply to User", "Assign / Internal Note", "Mark as Closed"};
+        new MaterialAlertDialogBuilder(requireContext())
+            .setTitle(subject + " Actions")
+            .setItems(options, (d, which) -> {
+                if (which == 0) openReplyDialog(ticket);
+                else if (which == 1) openAssignDialog(ticket);
+                else if (which == 2) onResolve(ticket);
+            })
+            .setNegativeButton("Cancel", null)
+            .show();
+    }
+
+    private void openReplyDialog(Ticket ticket) {
+        View content = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_ticket_reply, null, false);
+        TextInputEditText replyInput = content.findViewById(R.id.replyMessageInput);
+
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle("Reply to Ticket #" + ticket.id)
+                .setView(content)
+                .setNegativeButton("Cancel", null)
+                .setPositiveButton("Send", (d, which) -> {
+                    String message = replyInput.getText() != null ? replyInput.getText().toString().trim() : "";
+                    if (message.isEmpty()) {
+                        toast("Message cannot be empty");
+                        return;
+                    }
+                    sendReply(ticket, message);
+                })
+                .show();
+    }
+
+    private void sendReply(Ticket ticket, String message) {
+        if (pendingAction != null) pendingAction.cancel();
+        
+        pendingAction = api.ticketAction(new TicketActionRequest("reply", ticket.id, message));
+        pendingAction.enqueue(new Callback<ApiResponse<Object>>() {
+            @Override
+            public void onResponse(Call<ApiResponse<Object>> call, Response<ApiResponse<Object>> response) {
+                if (!isAdded()) return;
+                if (response.code() == 401) { handleUnauthorized(); return; }
+                if (!response.isSuccessful() || response.body() == null || !response.body().status) {
+                    toast("Failed to send reply");
+                    return;
+                }
+                toast("Reply sent successfully");
+                AuditLog.write(requireContext(), store.getUsername(), "ticket.reply", "ticket_id=" + ticket.id);
+                load();
+            }
+
+            @Override
+            public void onFailure(Call<ApiResponse<Object>> call, Throwable t) {
+                if (!isAdded()) return;
+                if (call.isCanceled()) return;
+                toast("Network error: " + t.getMessage());
+            }
+        });
     }
 
     @Override

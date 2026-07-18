@@ -45,6 +45,15 @@ public interface ApiService {
     @GET("tickets.php")
     Call<ApiResponse<List<Ticket>>> tickets(@Query("status") String status);
 
+    @GET("tickets.php")
+    Call<ApiResponse<List<com.virtuallab.admin.model.TicketMessage>>> ticketMessages(@Query("action") String action, @Query("ticket_id") int ticketId);
+
+    @GET("letters.php")
+    Call<ApiResponse<List<com.virtuallab.admin.model.Letter>>> getLetters(@Query("action") String action);
+
+    @GET("letters.php")
+    Call<ApiResponse<Object>> deleteLetter(@Query("action") String action, @Query("letter_id") String letterId);
+
     @POST("tickets.php")
     Call<ApiResponse<Object>> ticketAction(@Body TicketActionRequest request);
 

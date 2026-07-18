@@ -3,30 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Curved Notch Navbar - Ultra Premium UI</title>
+    <title>Virtual Lab Simulator - Premium Bottom Navigation</title>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-base: #0B0F19;
-            --bg-surface: rgba(255, 255, 255, 0.03);
-            --bg-surface-hover: rgba(255, 255, 255, 0.08);
+            --bg-body: #F7F9FC;
+            --surface: rgba(255, 255, 255, 0.85);
+            --primary: #4F7DFF;
+            --secondary: #6D5BFF;
+            --text-primary: #1F2937;
+            --text-secondary: #7B8794;
+            --success: #22C55E;
+            --danger: #FF3B30;
+            --danger-grad-1: #FF5C5C;
+            --danger-grad-2: #FF2D55;
             
-            --primary-gradient: linear-gradient(135deg, #00F0FF 0%, #5773FF 100%);
-            --secondary-gradient: linear-gradient(135deg, #FF3366 0%, #FF9933 100%);
-            
-            --text-main: #FFFFFF;
-            --text-muted: #8B9BB4;
-            --text-accent: #00F0FF;
-            
-            --glass-border: rgba(255, 255, 255, 0.1);
-            --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-            
-            --inactive-icon: #5B6B8A;
-            --active-icon: #00F0FF;
-            
-            --fab-shadow: 0 10px 25px -5px rgba(0, 240, 255, 0.4);
-            --font-family: 'Outfit', system-ui, -apple-system, sans-serif;
+            --active-gradient: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            --shadow-nav: 0 12px 40px rgba(0, 0, 0, 0.08);
+            --font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
         }
 
         * {
@@ -37,541 +32,378 @@
         }
 
         body {
-            background: #05070A;
-            background-image: 
-                radial-gradient(circle at 15% 50%, rgba(0, 240, 255, 0.08) 0%, transparent 50%),
-                radial-gradient(circle at 85% 30%, rgba(87, 115, 255, 0.08) 0%, transparent 50%);
+            background-color: #E2E8F0; /* Darker background for contrast against phone */
             font-family: var(--font-family);
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            padding: 20px;
         }
 
+        /* Mock device frame */
         .phone-container {
-            width: 375px;
-            height: 812px;
-            background: var(--bg-base);
-            border-radius: 45px;
+            width: 390px;
+            height: 844px;
+            background: var(--bg-body);
+            border-radius: 40px;
             position: relative;
-            box-shadow: 0 50px 100px -20px rgba(0, 0, 0, 0.7), inset 0 0 0 1px rgba(255,255,255,0.1);
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.15), inset 0 0 0 12px #FFFFFF;
             overflow: hidden;
             display: flex;
             flex-direction: column;
-            border: 8px solid #1A1F2E;
         }
 
-        /* Mock Dashboard Content */
-        .dashboard {
+        /* Mock content area */
+        .content {
             flex: 1;
-            padding: 32px 24px;
-            display: flex;
-            flex-direction: column;
-            gap: 24px;
+            padding: 40px 24px;
             overflow-y: auto;
-            padding-bottom: 130px; /* Space for navbar */
+            padding-bottom: 120px; /* Space for navbar */
         }
         
-        /* Hide scrollbar */
-        .dashboard::-webkit-scrollbar {
+        .content::-webkit-scrollbar {
             display: none;
         }
 
         .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            margin-bottom: 24px;
             animation: fadeDown 0.8s ease forwards;
-            opacity: 0;
         }
 
-        .header h2 {
+        .header h1 {
             font-size: 28px;
             font-weight: 700;
-            color: var(--text-main);
+            color: var(--text-primary);
             letter-spacing: -0.5px;
-            background: var(--primary-gradient);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
         }
 
         .header p {
-            font-size: 14px;
-            color: var(--text-muted);
-            font-weight: 500;
+            font-size: 15px;
+            color: var(--text-secondary);
             margin-top: 4px;
         }
 
-        .user-profile {
-            width: 48px;
-            height: 48px;
-            background: var(--bg-surface);
-            border-radius: 16px;
-            border: 1px solid var(--glass-border);
-            background-image: url('https://api.dicebear.com/7.x/avataaars/svg?seed=AdminBoss');
-            background-size: cover;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            transition: transform 0.3s ease;
-        }
-        
-        .user-profile:hover {
-            transform: scale(1.05) rotate(5deg);
-        }
-
-        /* Glassmorphism Cards */
-        .card {
-            background: var(--bg-surface);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
+        .mock-card {
+            background: #FFFFFF;
+            border-radius: 20px;
             padding: 24px;
-            border-radius: 28px;
-            border: 1px solid var(--glass-border);
-            box-shadow: var(--glass-shadow);
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            margin-bottom: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+            border: 1px solid rgba(0,0,0,0.03);
+            animation: fadeUp 0.8s ease forwards;
             opacity: 0;
             transform: translateY(20px);
-            animation: fadeUp 0.8s ease forwards;
         }
         
-        .card:nth-child(2) { animation-delay: 0.1s; }
-        .card:nth-child(3) { animation-delay: 0.2s; }
-        .card:nth-child(4) { animation-delay: 0.3s; }
+        .mock-card:nth-child(2) { animation-delay: 0.1s; }
+        .mock-card:nth-child(3) { animation-delay: 0.2s; }
 
-        .card:hover {
-            background: var(--bg-surface-hover);
-            transform: translateY(-5px);
-            border-color: rgba(255, 255, 255, 0.2);
-        }
-
-        .card h3 {
-            font-size: 14px;
-            color: var(--text-muted);
-            font-weight: 500;
-            margin-bottom: 12px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .card .value {
-            font-size: 36px;
-            font-weight: 800;
-            color: var(--text-main);
-            line-height: 1;
-        }
-
-        .trend-badge {
-            background: rgba(0, 240, 255, 0.15);
-            color: var(--text-accent);
-            padding: 6px 12px;
-            border-radius: 12px;
-            font-size: 13px;
-            font-weight: 700;
-            border: 1px solid rgba(0, 240, 255, 0.2);
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-
-        /* Progress Bar */
-        .progress-track {
-            width: 100%;
-            height: 6px;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 100px;
-            margin-top: 16px;
-            overflow: hidden;
-            position: relative;
-        }
-
-        .progress-fill {
-            position: absolute;
-            top: 0;
-            left: 0;
-            height: 100%;
-            width: 0%;
-            background: var(--primary-gradient);
-            border-radius: 100px;
-            animation: fillProgress 1.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-            animation-delay: 0.5s;
-        }
-        
-        /* Neon Glow Effect for System Uptime */
-        .neon-text {
-            text-shadow: 0 0 20px rgba(0, 240, 255, 0.5);
-        }
-
-        /* Navbar Styles */
+        /* Bottom Navigation Bar */
         .nav-wrapper {
             position: absolute;
-            bottom: 0;
-            width: 100%;
-            height: 110px;
-            pointer-events: none;
+            bottom: 16px;
+            left: 16px;
+            right: 16px;
+            height: 76px;
+            background: var(--surface);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 30px;
+            box-shadow: var(--shadow-nav);
+            border: 1px solid rgba(255, 255, 255, 0.6);
             display: flex;
-            justify-content: center;
-        }
-
-        .nav-bg-svg {
-            position: absolute;
-            bottom: 0;
-            width: 100%;
-            height: 100px;
-            fill: #121826;
-            filter: drop-shadow(0 -10px 25px rgba(0,0,0,0.5));
-            pointer-events: auto;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 8px; /* Inner padding for items */
+            z-index: 10;
         }
         
-        /* Subtle top border for the notch SVG to mimic glass edge */
-        .nav-bg-outline {
+        /* Sliding Pill */
+        .active-pill {
             position: absolute;
-            bottom: 0;
-            width: 100%;
-            height: 100px;
-            fill: none;
-            stroke: rgba(255,255,255,0.08);
-            stroke-width: 1.5px;
-            pointer-events: none;
-            z-index: 2;
-        }
-
-        .nav-content {
-            position: absolute;
-            bottom: 0;
-            width: 100%;
-            height: 85px;
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            padding: 0 10px 15px 10px;
-            pointer-events: auto;
-            z-index: 5;
+            top: 8px;
+            left: 8px;
+            height: 60px;
+            width: 60px; /* Default width */
+            background: var(--active-gradient);
+            border-radius: 24px;
+            box-shadow: 0 4px 15px rgba(79, 125, 255, 0.3);
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); /* Bouncy spring transition */
+            z-index: 1;
         }
 
         .nav-item {
-            flex: 1;
+            position: relative;
             display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 6px;
+            height: 60px;
             cursor: pointer;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 24px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            padding: 0 16px;
+            gap: 0;
+            z-index: 2;
+        }
+
+        /* Icon wrapper */
+        .icon-wrapper {
             position: relative;
-            z-index: 6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2;
         }
 
         .nav-item i {
             width: 24px;
             height: 24px;
-            color: var(--inactive-icon);
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            color: var(--text-secondary);
+            transition: all 0.3s ease;
             stroke-width: 2px;
         }
 
-        .nav-item span {
-            font-size: 11px;
+        /* Label */
+        .nav-label {
+            font-size: 14px;
             font-weight: 600;
-            color: var(--inactive-icon);
-            transition: color 0.3s ease, transform 0.3s ease;
-            transform: translateY(0);
-        }
-        
-        /* Active indicator dot */
-        .nav-item::after {
-            content: '';
-            position: absolute;
-            bottom: -8px;
-            width: 4px;
-            height: 4px;
-            border-radius: 50%;
-            background: var(--active-icon);
+            color: #FFFFFF;
+            max-width: 0;
             opacity: 0;
-            transform: scale(0);
-            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            box-shadow: 0 0 10px var(--active-icon);
+            transform: translateX(-5px);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            white-space: nowrap;
+            z-index: 2;
+        }
+
+        /* Active State */
+        .nav-item.active {
+            padding: 0 20px;
+            gap: 8px;
         }
 
         .nav-item.active i {
-            color: var(--active-icon);
-            transform: scale(1.2) translateY(-4px);
-            filter: drop-shadow(0 0 8px rgba(0, 240, 255, 0.4));
+            color: #FFFFFF;
+            transform: scale(1.15);
+            animation: bounceIcon 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
 
-        .nav-item.active span {
-            color: var(--active-icon);
-            transform: translateY(-2px);
-        }
-        
-        .nav-item.active::after {
+        .nav-item.active .nav-label {
+            max-width: 100px;
             opacity: 1;
-            transform: scale(1);
+            transform: translateX(0);
         }
 
-        /* Badge Styles */
-        .badge {
-            position: absolute;
-            top: -6px;
-            right: 18px;
-            background: var(--secondary-gradient);
-            color: white;
-            font-size: 10px;
-            font-weight: 800;
-            padding: 2px 6px;
-            border-radius: 12px;
-            border: 2px solid #121826;
-            box-shadow: 0 4px 8px rgba(255, 51, 102, 0.4);
-            animation: pulse 2s infinite;
-        }
-
-        .status-dot {
-            position: absolute;
-            top: 2px;
-            right: 25px;
-            width: 10px;
-            height: 10px;
-            background: #00F0FF;
-            border-radius: 50%;
-            border: 2px solid #121826;
-            box-shadow: 0 0 10px rgba(0, 240, 255, 0.6);
-        }
-
-        /* Glowing FAB Styles */
-        .fab-container {
-            position: absolute;
-            bottom: 45px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 10;
-        }
-
-        .fab {
-            width: 68px;
-            height: 68px;
-            background: var(--bg-base);
-            border-radius: 50%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            position: relative;
-            z-index: 2;
-        }
-        
-        .fab::before {
+        /* Ripple effect */
+        .nav-item::before {
             content: '';
             position: absolute;
-            inset: 4px;
-            background: var(--primary-gradient);
-            border-radius: 50%;
-            z-index: -1;
-            box-shadow: var(--fab-shadow);
-            transition: all 0.3s ease;
+            top: 50%;
+            left: 50%;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.04);
+            border-radius: 24px;
+            transform: translate(-50%, -50%) scale(0);
+            opacity: 0;
+            transition: transform 0.3s, opacity 0.3s;
+            z-index: 1;
         }
 
-        .fab:hover {
-            transform: scale(1.1) translateY(-5px);
-        }
-        
-        .fab:hover::before {
-            filter: brightness(1.2);
-            box-shadow: 0 15px 35px -5px rgba(0, 240, 255, 0.6);
+        .nav-item:active::before {
+            transform: translate(-50%, -50%) scale(1);
+            opacity: 1;
+            transition: 0s;
         }
 
-        .fab i {
-            width: 30px;
-            height: 30px;
-            color: white;
-            transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        /* Notification Badge */
+        .badge {
+            position: absolute;
+            top: -4px;
+            right: -6px;
+            background: linear-gradient(135deg, var(--danger-grad-1), var(--danger-grad-2));
+            color: #FFFFFF;
+            font-size: 11px;
+            font-weight: 700;
+            height: 18px;
+            min-width: 18px;
+            padding: 0 5px;
+            border-radius: 9px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid var(--surface); /* Matches nav surface */
+            box-shadow: 0 2px 4px rgba(255, 59, 48, 0.2);
+            z-index: 3;
+            transition: border-color 0.3s ease;
+        }
+
+        .nav-item.active .badge {
+            /* When active, the background behind badge is the pill gradient, we'll use primary color for the border to blend */
+            border-color: #5D6CFF; 
+        }
+
+        @keyframes bounceIcon {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.25); }
+            100% { transform: scale(1.15); }
         }
         
-        .fab:hover i {
-            transform: rotate(90deg);
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes fadeDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         /* Android Gesture Bar */
         .gesture-bar {
             position: absolute;
-            bottom: 10px;
+            bottom: 8px;
             left: 50%;
             transform: translateX(-50%);
-            width: 130px;
+            width: 120px;
             height: 5px;
-            background: rgba(255,255,255,0.2);
+            background: rgba(0, 0, 0, 0.2);
             border-radius: 100px;
-            z-index: 10;
+            z-index: 11;
         }
-
-        .nav-spacer {
-            width: 70px;
-        }
-        
-        /* Animations */
-        @keyframes fadeUp {
-            from { opacity: 0; transform: translateY(30px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        @keyframes fadeDown {
-            from { opacity: 0; transform: translateY(-20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        @keyframes fillProgress {
-            from { width: 0%; }
-            to { width: 92%; }
-        }
-        
-        @keyframes pulse {
-            0% { transform: scale(1); box-shadow: 0 4px 8px rgba(255, 51, 102, 0.4); }
-            50% { transform: scale(1.15); box-shadow: 0 8px 16px rgba(255, 51, 102, 0.6); }
-            100% { transform: scale(1); box-shadow: 0 4px 8px rgba(255, 51, 102, 0.4); }
-        }
-
     </style>
 </head>
 <body>
 
     <div class="phone-container">
-        <!-- Mock Dashboard -->
-        <div class="dashboard">
+        <div class="content">
             <div class="header">
-                <div>
-                    <h2>Dashboard</h2>
-                    <p>Virtual Lab Command Center</p>
-                </div>
-                <div class="user-profile"></div>
+                <h1>Dashboard</h1>
+                <p>Welcome back to Virtual Lab</p>
             </div>
 
-            <div class="card">
-                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                    <div>
-                        <h3>Pending Tickets</h3>
-                        <div class="value">24</div>
-                    </div>
-                    <div class="trend-badge">
-                        <i data-lucide="trending-up" style="width: 16px; height: 16px;"></i>
-                        12%
-                    </div>
+            <div class="mock-card">
+                <div style="width: 44px; height: 44px; background: rgba(79, 125, 255, 0.1); border-radius: 14px; display: flex; align-items: center; justify-content: center; margin-bottom: 14px;">
+                    <i data-lucide="flask-conical" style="color: var(--primary);"></i>
                 </div>
+                <h3 style="color: var(--text-primary); font-size: 17px; margin-bottom: 6px;">Chemistry Lab 101</h3>
+                <p style="color: var(--text-secondary); font-size: 14px;">42 Students currently active</p>
             </div>
-
-            <div class="card" style="position: relative; overflow: hidden;">
-                <!-- Subtle glow orb inside the card -->
-                <div style="position: absolute; top: -30px; right: -30px; width: 100px; height: 100px; background: rgba(0, 240, 255, 0.2); filter: blur(40px); border-radius: 50%;"></div>
-                
-                <h3>System Uptime</h3>
-                <div class="value neon-text">99.92%</div>
-                <div class="progress-track">
-                    <div class="progress-fill"></div>
+            
+            <div class="mock-card">
+                <div style="width: 44px; height: 44px; background: rgba(34, 197, 94, 0.1); border-radius: 14px; display: flex; align-items: center; justify-content: center; margin-bottom: 14px;">
+                    <i data-lucide="check-circle" style="color: var(--success);"></i>
                 </div>
+                <h3 style="color: var(--text-primary); font-size: 17px; margin-bottom: 6px;">System Status</h3>
+                <p style="color: var(--text-secondary); font-size: 14px;">All services operational</p>
             </div>
-
-            <div class="card">
-                <h3>Active Practical</h3>
-                <div style="display: flex; align-items: center; gap: 16px; margin-top: 12px;">
-                    <div style="width: 56px; height: 56px; background: rgba(87, 115, 255, 0.1); border: 1px solid rgba(87, 115, 255, 0.2); border-radius: 16px; display: flex; justify-content: center; align-items: center; box-shadow: 0 8px 16px rgba(0,0,0,0.2);">
-                        <i data-lucide="flask-conical" style="color: #5773FF; width: 28px; stroke-width: 1.5px;"></i>
-                    </div>
-                    <div>
-                        <p style="font-weight: 700; color: var(--text-main); font-size: 18px; letter-spacing: 0.5px;">Chemistry Lab A1</p>
-                        <p style="font-size: 13px; color: var(--text-accent); margin-top: 4px; display: flex; align-items: center; gap: 4px;">
-                            <span style="display: inline-block; width: 6px; height: 6px; background: var(--text-accent); border-radius: 50%; box-shadow: 0 0 8px var(--text-accent); animation: pulse 2s infinite;"></span>
-                            Live • 42 Users
-                        </p>
-                    </div>
+            
+            <div class="mock-card">
+                <div style="width: 44px; height: 44px; background: rgba(255, 59, 48, 0.1); border-radius: 14px; display: flex; align-items: center; justify-content: center; margin-bottom: 14px;">
+                    <i data-lucide="ticket" style="color: var(--danger);"></i>
                 </div>
+                <h3 style="color: var(--text-primary); font-size: 17px; margin-bottom: 6px;">Active Tickets</h3>
+                <p style="color: var(--text-secondary); font-size: 14px;">5 pending requests require action</p>
             </div>
         </div>
 
-        <!-- Navbar Wrapper -->
+        <!-- Navigation Bar -->
         <div class="nav-wrapper">
-            <!-- Curved background SVG for the Notch -->
-            <svg class="nav-bg-svg" viewBox="0 0 360 100" preserveAspectRatio="none">
-                <path d="M0,40 
-                         C0,20 10,10 30,10 
-                         L130,10 
-                         C145,10 150,15 155,25 
-                         C162,45 178,55 180,55 
-                         C182,55 198,45 205,25 
-                         C210,15 215,10 230,10 
-                         L330,10 
-                         C350,10 360,20 360,40 
-                         L360,100 
-                         L0,100 Z" />
-            </svg>
+            <div class="active-pill" id="activePill"></div>
             
-            <!-- Outline to make it pop like glass -->
-            <svg class="nav-bg-outline" viewBox="0 0 360 100" preserveAspectRatio="none">
-                <path d="M0,40 
-                         C0,20 10,10 30,10 
-                         L130,10 
-                         C145,10 150,15 155,25 
-                         C162,45 178,55 180,55 
-                         C182,55 198,45 205,25 
-                         C210,15 215,10 230,10 
-                         L330,10 
-                         C350,10 360,20 360,40" />
-            </svg>
-
-            <!-- Nav Content -->
-            <div class="nav-content">
-                <div class="nav-item active" onclick="setActive(this)">
+            <div class="nav-item active" onclick="setActive(this)">
+                <div class="icon-wrapper">
                     <i data-lucide="layout-dashboard"></i>
-                    <span>Home</span>
                 </div>
-                <div class="nav-item" onclick="setActive(this)">
+                <span class="nav-label">Home</span>
+            </div>
+            
+            <div class="nav-item" onclick="setActive(this)">
+                <div class="icon-wrapper">
                     <i data-lucide="ticket"></i>
-                    <span>Tickets</span>
                     <div class="badge">5</div>
                 </div>
-                
-                <div class="nav-spacer"></div>
-
-                <div class="nav-item" onclick="setActive(this)">
+                <span class="nav-label">Tickets</span>
+            </div>
+            
+            <div class="nav-item" onclick="setActive(this)">
+                <div class="icon-wrapper">
+                    <i data-lucide="flask-conical"></i>
+                </div>
+                <span class="nav-label">Practicals</span>
+            </div>
+            
+            <div class="nav-item" onclick="setActive(this)">
+                <div class="icon-wrapper">
                     <i data-lucide="settings"></i>
-                    <span>Settings</span>
                 </div>
-                <div class="nav-item" onclick="setActive(this)">
+                <span class="nav-label">Settings</span>
+            </div>
+            
+            <div class="nav-item" onclick="setActive(this)">
+                <div class="icon-wrapper">
                     <i data-lucide="shield"></i>
-                    <span>Security</span>
-                    <div class="status-dot"></div>
                 </div>
+                <span class="nav-label">Security</span>
             </div>
-
-            <!-- Central Floating Action Button -->
-            <div class="fab-container">
-                <div class="fab" onclick="alert('System Initializing...')">
-                    <i data-lucide="power"></i>
-                </div>
-            </div>
-
-            <!-- Gesture Indicator -->
-            <div class="gesture-bar"></div>
         </div>
+        
+        <div class="gesture-bar"></div>
     </div>
 
     <script>
-        // Initialize Icons
+        // Initialize Lucide icons
         lucide.createIcons();
 
-        // Handle Navbar interactions
-        function setActive(element) {
-            // Remove active class from all
-            document.querySelectorAll('.nav-item').forEach(item => {
-                item.classList.remove('active');
-            });
-            
-            // Add to clicked element
-            element.classList.add('active');
-            
-            // Interaction feedback (haptic-like scale)
-            element.style.transform = 'scale(0.9)';
-            setTimeout(() => {
-                element.style.transform = 'scale(1)';
-            }, 150);
+        const pill = document.getElementById('activePill');
+        let updateTimeout;
+
+        function updatePillPosition(element) {
+            pill.style.left = element.offsetLeft + 'px';
+            pill.style.width = element.offsetWidth + 'px';
         }
+
+        function setActive(element) {
+            const prevActive = document.querySelector('.nav-item.active');
+            if (prevActive === element) return;
+
+            if (prevActive) {
+                prevActive.classList.remove('active');
+            }
+            element.classList.add('active');
+
+            // Update pill immediately for base transition
+            updatePillPosition(element);
+            
+            // The nav-item's width transitions over 0.3s due to padding/gap changes.
+            // We request multiple animation frames to keep the absolute pill synced with the flexing width.
+            const startTime = performance.now();
+            function syncPill() {
+                updatePillPosition(element);
+                if (performance.now() - startTime < 400) {
+                    requestAnimationFrame(syncPill);
+                }
+            }
+            requestAnimationFrame(syncPill);
+        }
+
+        // Initialize pill position on load
+        window.addEventListener('DOMContentLoaded', () => {
+            const activeItem = document.querySelector('.nav-item.active');
+            if (activeItem) {
+                setTimeout(() => {
+                    updatePillPosition(activeItem);
+                }, 50); // slight delay to ensure fonts/icons loaded
+            }
+        });
+        
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            const activeItem = document.querySelector('.nav-item.active');
+            if (activeItem) {
+                updatePillPosition(activeItem);
+            }
+        });
     </script>
 </body>
 </html>

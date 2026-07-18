@@ -270,14 +270,13 @@
                         android:orientation="vertical"
                         android:padding="@dimen/space_md">
 
-                        <TextView
-                            android:layout_width="32dp"
-                            android:layout_height="32dp"
+                        <ImageView
+                            android:layout_width="36dp"
+                            android:layout_height="36dp"
                             android:background="@drawable/bg_ddos_chip_blue"
-                            android:gravity="center"
-                            android:text="R"
-                            android:textColor="@color/ddos_blue"
-                            android:textStyle="bold" />
+                            android:padding="8dp"
+                            android:src="@drawable/ic_refresh_24"
+                            app:tint="@color/ddos_blue" />
 
                         <TextView
                             android:layout_width="wrap_content"
@@ -325,14 +324,13 @@
                         android:orientation="vertical"
                         android:padding="@dimen/space_md">
 
-                        <TextView
-                            android:layout_width="32dp"
-                            android:layout_height="32dp"
+                        <ImageView
+                            android:layout_width="36dp"
+                            android:layout_height="36dp"
                             android:background="@drawable/bg_ddos_chip_green"
-                            android:gravity="center"
-                            android:text="B"
-                            android:textColor="@color/ddos_green"
-                            android:textStyle="bold" />
+                            android:padding="8dp"
+                            android:src="@drawable/ic_security_24"
+                            app:tint="@color/ddos_green" />
 
                         <TextView
                             android:layout_width="wrap_content"
@@ -380,14 +378,13 @@
                         android:orientation="vertical"
                         android:padding="@dimen/space_md">
 
-                        <TextView
-                            android:layout_width="32dp"
-                            android:layout_height="32dp"
+                        <ImageView
+                            android:layout_width="36dp"
+                            android:layout_height="36dp"
                             android:background="@drawable/bg_ddos_chip_red"
-                            android:gravity="center"
-                            android:text="E"
-                            android:textColor="@color/ddos_red"
-                            android:textStyle="bold" />
+                            android:padding="8dp"
+                            android:src="@drawable/ic_notifications_24"
+                            app:tint="@color/ddos_red" />
 
                         <TextView
                             android:layout_width="wrap_content"
@@ -435,14 +432,13 @@
                         android:orientation="vertical"
                         android:padding="@dimen/space_md">
 
-                        <TextView
-                            android:layout_width="32dp"
-                            android:layout_height="32dp"
+                        <ImageView
+                            android:layout_width="36dp"
+                            android:layout_height="36dp"
                             android:background="@drawable/bg_ddos_chip_blue"
-                            android:gravity="center"
-                            android:text="U"
-                            android:textColor="@color/ddos_cyan"
-                            android:textStyle="bold" />
+                            android:padding="8dp"
+                            android:src="@drawable/ic_person_24"
+                            app:tint="@color/ddos_cyan" />
 
                         <TextView
                             android:layout_width="wrap_content"
@@ -519,6 +515,18 @@
                                 android:textColor="@color/ddos_text_secondary"
                                 android:textSize="12sp" />
                         </LinearLayout>
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/unblockBtn"
+                            style="@style/Widget.VirtualLab.Button.Small"
+                            android:layout_width="wrap_content"
+                            android:layout_height="40dp"
+                            android:layout_marginEnd="8dp"
+                            android:text="Unblock"
+                            android:textColor="@color/ddos_green"
+                            app:backgroundTint="#1A10B981"
+                            app:strokeColor="@color/ddos_green"
+                            app:strokeWidth="1dp" />
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/blockBtn"

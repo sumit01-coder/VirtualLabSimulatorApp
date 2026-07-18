@@ -31,7 +31,23 @@ public final class SimpleLineAdapter extends RecyclerView.Adapter<SimpleLineAdap
 
     @Override
     public void onBindViewHolder(@NonNull VH holder, int position) {
-        holder.text.setText(rows.get(position));
+        String raw = rows.get(position);
+        if (raw == null) return;
+        
+        if (raw.contains("|")) {
+            String[] parts = raw.split("\\|", 2);
+            holder.title.setText(parts[0].trim());
+            holder.text.setText(parts[1].trim());
+            holder.text.setVisibility(View.VISIBLE);
+        } else if (raw.contains(":")) {
+            String[] parts = raw.split(":", 2);
+            holder.title.setText(parts[0].trim());
+            holder.text.setText(parts[1].trim());
+            holder.text.setVisibility(View.VISIBLE);
+        } else {
+            holder.title.setText(raw);
+            holder.text.setVisibility(View.GONE);
+        }
     }
 
     @Override
@@ -40,10 +56,12 @@ public final class SimpleLineAdapter extends RecyclerView.Adapter<SimpleLineAdap
     }
 
     static final class VH extends RecyclerView.ViewHolder {
+        final TextView title;
         final TextView text;
 
         VH(@NonNull View itemView) {
             super(itemView);
+            title = itemView.findViewById(R.id.title);
             text = itemView.findViewById(R.id.text);
         }
     }

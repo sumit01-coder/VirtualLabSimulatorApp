@@ -78,7 +78,9 @@
             android:layout_height="40dp"
             android:layout_marginTop="@dimen/space_sm"
             android:text="Unblock"
-            android:textColor="@android:color/white"
-            app:backgroundTint="@color/ddos_red" />
+            android:textColor="@color/ddos_green"
+            app:backgroundTint="#1A10B981"
+            app:strokeColor="@color/ddos_green"
+            app:strokeWidth="1dp" />
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>

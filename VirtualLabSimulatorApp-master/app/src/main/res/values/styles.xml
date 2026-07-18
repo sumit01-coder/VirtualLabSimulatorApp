@@ -31,6 +31,18 @@
         <item name="boxBackgroundColor">@android:color/white</item>
     </style>
 
+    <style name="Widget.VirtualLab.TextInputLayout.SearchPill" parent="Widget.Material3.TextInputLayout.OutlinedBox">
+        <item name="boxStrokeColor">@color/stroke</item>
+        <item name="hintTextColor">@color/text_muted</item>
+        <item name="boxStrokeWidth">1dp</item>
+        <item name="boxStrokeWidthFocused">2dp</item>
+        <item name="boxCornerRadiusTopStart">99dp</item>
+        <item name="boxCornerRadiusTopEnd">99dp</item>
+        <item name="boxCornerRadiusBottomStart">99dp</item>
+        <item name="boxCornerRadiusBottomEnd">99dp</item>
+        <item name="boxBackgroundColor">@android:color/white</item>
+    </style>
+
     <style name="Widget.VirtualLab.TextInputLayout.Exposed" parent="Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu">
         <item name="boxStrokeColor">@color/stroke</item>
         <item name="hintTextColor">@color/text_muted</item>

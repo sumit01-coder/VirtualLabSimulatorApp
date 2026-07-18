@@ -23,6 +23,7 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.virtuallab.admin.ui.utils.CustomAlertUtils;
 import com.google.android.material.switchmaterial.SwitchMaterial;
 import com.google.android.material.textfield.TextInputEditText;
 import com.sumit.virtuallabadmin.v29.R;
@@ -98,6 +99,7 @@ public final class DdosFragment extends BaseAuthedFragment
     private TextView topEmpty;
     private TextView recentEmpty;
     private MaterialButton manualBlockBtn;
+    private MaterialButton manualUnblockBtn;
     private MaterialButton presetRelaxedBtn;
     private MaterialButton presetNormalBtn;
     private MaterialButton presetStrictBtn;
@@ -189,6 +191,10 @@ public final class DdosFragment extends BaseAuthedFragment
         manualBlockBtn = view.findViewById(R.id.blockBtn);
         if (manualBlockBtn != null) {
             manualBlockBtn.setOnClickListener(v -> showManualBlockDialog(selectedIp));
+        }
+        manualUnblockBtn = view.findViewById(R.id.unblockBtn);
+        if (manualUnblockBtn != null) {
+            manualUnblockBtn.setOnClickListener(v -> showManualUnblockDialog(selectedIp));
         }
 
         presetRelaxedBtn = view.findViewById(R.id.presetRelaxedBtn);
@@ -551,6 +557,38 @@ public final class DdosFragment extends BaseAuthedFragment
                 .show();
     }
 
+    private void showManualUnblockDialog(String prefillIp) {
+        if (!isAdded()) {
+            return;
+        }
+        View content = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_block_ip, null, false);
+        TextInputEditText ipInput = content.findViewById(R.id.ipInput);
+        TextInputEditText durationInput = content.findViewById(R.id.durationInput);
+        if (durationInput != null && durationInput.getParent() != null && durationInput.getParent().getParent() instanceof View) {
+            ((View) durationInput.getParent().getParent()).setVisibility(View.GONE); // Hide duration field for unblock
+        }
+        if (ipInput != null && prefillIp != null && !prefillIp.trim().isEmpty()) {
+            ipInput.setText(prefillIp.trim());
+            if (ipInput.getText() != null) {
+                ipInput.setSelection(ipInput.getText().length());
+            }
+        }
+
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle("Unblock IP")
+                .setView(content)
+                .setNegativeButton("Cancel", null)
+                .setPositiveButton("Unblock", (dialog, which) -> {
+                    String ip = ipInput != null && ipInput.getText() != null ? ipInput.getText().toString().trim() : "";
+                    if (TextUtils.isEmpty(ip)) {
+                        toast("Enter an IP address");
+                        return;
+                    }
+                    doUnblock(ip);
+                })
+                .show();
+    }
+
     private int parseDurationSeconds(String raw) {
         int duration = 3600;
         if (!TextUtils.isEmpty(raw)) {
@@ -574,12 +612,12 @@ public final class DdosFragment extends BaseAuthedFragment
         if (ip == null || TextUtils.isEmpty(ip.ip) || !isAdded()) {
             return;
         }
-        new MaterialAlertDialogBuilder(requireContext())
-                .setTitle("Block " + ip.ip + "?")
-                .setMessage("Block this IP for 1 hour?")
-                .setNegativeButton("Cancel", null)
-                .setPositiveButton("Block", (dialog, which) -> doBlock(ip.ip, 3600))
-                .show();
+        CustomAlertUtils.showConfirmation(requireContext(),
+                "Block " + ip.ip + "?",
+                "Are you sure you want to block this IP for 1 hour? It will not be able to access the API.",
+                "Block", "Cancel",
+                R.drawable.ic_warning, R.color.ddos_red,
+                () -> doBlock(ip.ip, 3600));
     }
 
     @Override
@@ -587,12 +625,12 @@ public final class DdosFragment extends BaseAuthedFragment
         if (ip == null || TextUtils.isEmpty(ip.ip) || !isAdded()) {
             return;
         }
-        new MaterialAlertDialogBuilder(requireContext())
-                .setTitle("Unblock " + ip.ip + "?")
-                .setMessage("Remove this IP from the block list?")
-                .setNegativeButton("Cancel", null)
-                .setPositiveButton("Unblock", (dialog, which) -> doUnblock(ip.ip))
-                .show();
+        CustomAlertUtils.showConfirmation(requireContext(),
+                "Unblock " + ip.ip + "?",
+                "Remove this IP from the block list? It will regain access immediately.",
+                "Unblock", "Cancel",
+                R.drawable.ic_check_circle, R.color.ddos_green,
+                () -> doUnblock(ip.ip));
     }
 
     @Override
@@ -628,10 +666,12 @@ public final class DdosFragment extends BaseAuthedFragment
     }
 
     private void updateManualBlockLabel() {
-        if (manualBlockBtn == null) {
-            return;
+        if (manualBlockBtn != null) {
+            manualBlockBtn.setText(selectedIp == null || selectedIp.trim().isEmpty() ? "Block IP" : "Block selected");
         }
-        manualBlockBtn.setText(selectedIp == null || selectedIp.trim().isEmpty() ? "Block IP" : "Block selected");
+        if (manualUnblockBtn != null) {
+            manualUnblockBtn.setText(selectedIp == null || selectedIp.trim().isEmpty() ? "Unblock IP" : "Unblock selected");
+        }
     }
 
     private void applyPreset(String preset) {

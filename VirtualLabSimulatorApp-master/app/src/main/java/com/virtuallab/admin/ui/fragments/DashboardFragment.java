@@ -53,7 +53,9 @@ public final class DashboardFragment extends BaseAuthedFragment {
     private TextView practicals;
     private TextView users;
     private TextView letters;
+    private TextView lettersVerified;
     private TextView tickets;
+    private TextView ticketsOpen;
 
     // Card containers
     private MaterialCardView cardLabs;
@@ -64,21 +66,17 @@ public final class DashboardFragment extends BaseAuthedFragment {
     private MaterialCardView cardTickets;
 
     // Extended real-data views
-    private TextView healthServer;
-    private TextView healthDb;
-    private TextView healthApi;
-    private TextView statNewUsersWeek;
-    private TextView statTotalUsersLabel;
-    private TextView statActiveTicketsDetail;
-    private TextView statActiveTicketsBig;
+
     private TextView statUsersFeatured;
     private TextView statUsersTrendFeatured;
+    private TextView statUsersTrend;
+    private TextView statLabsTrend;
+    private TextView statPracticalsTrend;
+    private TextView statDepartmentsTrend;
     private Button filterTodayBtn;
     private Button filterWeekBtn;
     private Button filterMonthBtn;
-    private Button actionAddUserBtn;
-    private Button actionCreateLabBtn;
-    private Button actionReportsBtn;
+
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -112,7 +110,9 @@ public final class DashboardFragment extends BaseAuthedFragment {
         practicals = v.findViewById(R.id.statPracticals);
         users = v.findViewById(R.id.statUsers);
         letters = v.findViewById(R.id.statLetters);
+        lettersVerified = v.findViewById(R.id.statLettersVerified);
         tickets = v.findViewById(R.id.statTickets);
+        ticketsOpen = v.findViewById(R.id.statTicketsOpen);
 
         cardLabs = v.findViewById(R.id.cardLabs);
         cardPracticals = v.findViewById(R.id.cardPracticals);
@@ -142,21 +142,17 @@ public final class DashboardFragment extends BaseAuthedFragment {
         }
 
         // Extended real-data views
-        healthServer = v.findViewById(R.id.healthServer);
-        healthDb = v.findViewById(R.id.healthDb);
-        healthApi = v.findViewById(R.id.healthApi);
-        statNewUsersWeek = v.findViewById(R.id.statNewUsersWeek);
-        statTotalUsersLabel = v.findViewById(R.id.statTotalUsersLabel);
-        statActiveTicketsDetail = v.findViewById(R.id.statActiveTicketsDetail);
-        statActiveTicketsBig = v.findViewById(R.id.statActiveTicketsBig);
+
         statUsersFeatured = v.findViewById(R.id.statUsersFeatured);
         statUsersTrendFeatured = v.findViewById(R.id.statUsersTrendFeatured);
+        statUsersTrend = v.findViewById(R.id.statUsersTrend);
+        statLabsTrend = v.findViewById(R.id.statLabsTrend);
+        statPracticalsTrend = v.findViewById(R.id.statPracticalsTrend);
+        statDepartmentsTrend = v.findViewById(R.id.statDepartmentsTrend);
         filterTodayBtn = v.findViewById(R.id.filterTodayBtn);
         filterWeekBtn = v.findViewById(R.id.filterWeekBtn);
         filterMonthBtn = v.findViewById(R.id.filterMonthBtn);
-        actionAddUserBtn = v.findViewById(R.id.actionAddUserBtn);
-        actionCreateLabBtn = v.findViewById(R.id.actionCreateLabBtn);
-        actionReportsBtn = v.findViewById(R.id.actionReportsBtn);
+
 
         wireClicks();
 
@@ -183,15 +179,7 @@ public final class DashboardFragment extends BaseAuthedFragment {
         if (cardUsers != null) {
             cardUsers.setOnClickListener(v -> startActivity(new Intent(requireContext(), UsersActivity.class)));
         }
-        if (actionAddUserBtn != null) {
-            actionAddUserBtn.setOnClickListener(v -> startActivity(new Intent(requireContext(), UsersActivity.class)));
-        }
-        if (actionCreateLabBtn != null) {
-            actionCreateLabBtn.setOnClickListener(v -> startActivity(new Intent(requireContext(), LabsActivity.class)));
-        }
-        if (actionReportsBtn != null) {
-            actionReportsBtn.setOnClickListener(v -> toastSoon("Reports module is coming soon."));
-        }
+
         if (filterTodayBtn != null) {
             filterTodayBtn.setOnClickListener(v -> updateTimeFilter("today"));
         }
@@ -213,7 +201,7 @@ public final class DashboardFragment extends BaseAuthedFragment {
         }
         // Letters card (6th card, currently named cardApiHealth in layout)
         if (cardApiHealth != null) {
-            cardApiHealth.setOnClickListener(v -> toastSoon("Letters module is coming soon."));
+            cardApiHealth.setOnClickListener(v -> startActivity(new Intent(getContext(), com.virtuallab.admin.ui.LettersActivity.class)));
         }
     }
 
@@ -355,6 +343,7 @@ public final class DashboardFragment extends BaseAuthedFragment {
         api.dashboard().enqueue(new Callback<ApiResponse<Stats>>() {
             @Override
             public void onResponse(Call<ApiResponse<Stats>> call, Response<ApiResponse<Stats>> response) {
+                if (!isAdded() || getContext() == null) return;
                 swipe.setRefreshing(false);
                 if (response.code() == 401) {
                     handleUnauthorized();
@@ -377,6 +366,7 @@ public final class DashboardFragment extends BaseAuthedFragment {
 
             @Override
             public void onFailure(Call<ApiResponse<Stats>> call, Throwable t) {
+                if (!isAdded() || getContext() == null) return;
                 swipe.setRefreshing(false);
                 Stats cached = OfflineCache.getObject(requireContext(), CACHE_KEY, Stats.class);
                 if (cached != null) {
@@ -398,33 +388,28 @@ public final class DashboardFragment extends BaseAuthedFragment {
         if (practicals != null) practicals.setText(String.valueOf(s.practicals));
         if (users != null) users.setText(String.valueOf(s.users));
         if (statUsersFeatured != null) statUsersFeatured.setText(String.valueOf(s.users));
-        if (letters != null) letters.setText(String.valueOf(s.verified_letters));
-        if (tickets != null) tickets.setText(String.valueOf(s.active_tickets));
+        if (letters != null) letters.setText(String.valueOf(s.total_letters));
+        if (lettersVerified != null) lettersVerified.setText(s.verified_letters + " Verified");
+        if (tickets != null) tickets.setText(String.valueOf(s.total_tickets));
+        if (ticketsOpen != null) ticketsOpen.setText(s.active_tickets + " Open");
         if (statUsersTrendFeatured != null) {
-            String trend = s.new_users_week >= 0 ? "▲ +" + s.new_users_week : "▼ " + s.new_users_week;
-            statUsersTrendFeatured.setText(trend + " this week");
+            String trend = s.new_users_month >= 0 ? "▲ +" + s.new_users_month : "▼ " + s.new_users_month;
+            statUsersTrendFeatured.setText(trend + " this month");
+        }
+        if (statUsersTrend != null) {
+            statUsersTrend.setText((s.new_users_month >= 0 ? "↑ +" : "↓ ") + s.new_users_month + " this month");
+        }
+        if (statLabsTrend != null) {
+            statLabsTrend.setText((s.new_labs_month >= 0 ? "↑ +" : "↓ ") + s.new_labs_month + " this month");
+        }
+        if (statPracticalsTrend != null) {
+            statPracticalsTrend.setText((s.new_practicals_month >= 0 ? "↑ +" : "↓ ") + s.new_practicals_month + " this month");
+        }
+        if (statDepartmentsTrend != null) {
+            statDepartmentsTrend.setText((s.new_departments_month >= 0 ? "↑ +" : "↓ ") + s.new_departments_month + " this month");
         }
 
-        // System health (real from API)
-        String online = "🟢 Online";
-        if (healthServer != null) healthServer.setText("Server: " + online);
-        if (healthDb != null) healthDb.setText("Database: " + online);
-        if (healthApi != null) healthApi.setText("API: " + online);
 
-        // User growth (real from API)
-        if (statNewUsersWeek != null) {
-            statNewUsersWeek.setText("New registrations this week: " + s.new_users_week);
-        }
-        if (statTotalUsersLabel != null) {
-            statTotalUsersLabel.setText(String.valueOf(s.users) + " total users");
-        }
 
-        // Active tickets (real from API)
-        if (statActiveTicketsDetail != null) {
-            statActiveTicketsDetail.setText("Unresolved support tickets");
-        }
-        if (statActiveTicketsBig != null) {
-            statActiveTicketsBig.setText(String.valueOf(s.active_tickets));
-        }
     }
 }

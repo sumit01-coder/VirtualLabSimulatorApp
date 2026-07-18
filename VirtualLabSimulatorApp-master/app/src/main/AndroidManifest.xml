@@ -66,6 +66,13 @@
         <activity
             android:name="com.virtuallab.admin.ui.AnalyticsActivity"
             android:exported="false" />
+        <activity
+            android:name="com.virtuallab.admin.ui.TicketChatActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name="com.virtuallab.admin.ui.LettersActivity"
+            android:exported="false" />
 
         <receiver
             android:name="com.virtuallab.admin.work.UpdateDownloadReceiver"
