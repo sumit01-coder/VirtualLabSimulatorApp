@@ -58,8 +58,10 @@ public final class AppUpdateActivity extends AppCompatActivity {
     private TextView publishedAtText;
     private TextView notesText;
     private TextView statusText;
+    private TextView progressText;
 
     private MaterialButton downloadBtn;
+    private MaterialButton cancelDownloadBtn;
     private MaterialButton openGithubBtn;
     private MaterialButton btnUninstall;
 
@@ -76,7 +78,6 @@ public final class AppUpdateActivity extends AppCompatActivity {
     private ObjectAnimator downloadAnim;
     private BroadcastReceiver downloadReceiver;
 
-    private TextView progressText;
     private Handler progressHandler;
     private Runnable progressRunnable;
     private boolean hasPromptedInstall = false;
@@ -103,8 +104,10 @@ public final class AppUpdateActivity extends AppCompatActivity {
         publishedAtText = findViewById(R.id.publishedAtText);
         notesText = findViewById(R.id.notesText);
         statusText = findViewById(R.id.statusText);
+        progressText = findViewById(R.id.progressText);
 
         downloadBtn = findViewById(R.id.downloadBtn);
+        cancelDownloadBtn = findViewById(R.id.cancelDownloadBtn);
         openGithubBtn = findViewById(R.id.openGithubBtn);
         btnUninstall = findViewById(R.id.btnUninstall);
 
@@ -335,7 +338,7 @@ public final class AppUpdateActivity extends AppCompatActivity {
         DownloadManager.Request req = new DownloadManager.Request(uri)
                 .setTitle("Virtual Lab Admin")
                 .setDescription("Downloading update")
-                .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+                .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE)
                 .setAllowedOverMetered(true)
                 .setAllowedOverRoaming(true)
                 .setMimeType("application/vnd.android.package-archive")
@@ -519,9 +522,9 @@ public final class AppUpdateActivity extends AppCompatActivity {
         progressText.setVisibility(View.VISIBLE);
         progress.setIndeterminate(false);
         progress.setProgressCompat(0, true);
-        downloadBtn.setEnabled(true);
-        downloadBtn.setText("Cancel download");
-        downloadBtn.setOnClickListener(v -> cancelDownload());
+        downloadBtn.setVisibility(View.GONE);
+        cancelDownloadBtn.setVisibility(View.VISIBLE);
+        cancelDownloadBtn.setOnClickListener(v -> cancelDownload());
 
         if (downloadAnim == null) {
             PropertyValuesHolder moveY = PropertyValuesHolder.ofFloat(View.TRANSLATION_Y, -15f, 15f);
@@ -579,6 +582,8 @@ public final class AppUpdateActivity extends AppCompatActivity {
     private void stopDownloadingUi() {
         progress.setVisibility(View.GONE);
         progressText.setVisibility(View.GONE);
+        cancelDownloadBtn.setVisibility(View.GONE);
+        downloadBtn.setVisibility(View.VISIBLE);
         if (downloadAnim != null) {
             downloadAnim.cancel();
             animIcon.setTranslationY(0f);
